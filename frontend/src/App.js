@@ -1011,6 +1011,7 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/checkin/:salonId" element={<PublicCheckIn />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
