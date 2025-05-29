@@ -162,6 +162,22 @@ async def public_customer_checkin(checkin_data: dict):
         name = checkin_data["name"]
         email = checkin_data.get("email", "")
         phone = checkin_data.get("phone", "")
+
+        # Validate required fields
+        if not name or not phone:
+            raise HTTPException(status_code=400, detail="Name and phone number are required")
+        
+        # Clean phone number (remove spaces, dashes, parentheses, dots, plus signs)
+        import re
+        phone = re.sub(r'[\s\-\(\)\.\+]', '', phone) if phone else ''
+        
+        # Remove common prefixes like country codes
+        if phone and phone.startswith('1') and len(phone) == 11:
+            phone = phone[1:]
+        
+        # Validate phone number (should be 10 digits for US)
+        if phone and not re.match(r'^\d{10,}$', phone):
+            raise HTTPException(status_code=400, detail="Please enter a valid 10-digit phone number")
         service_type = checkin_data.get("service_type", "Walk-in")
         
         # Get salon settings
