@@ -364,9 +364,83 @@ async def public_customer_checkin(checkin_data: dict):
         logger.error(f"Public check-in error: {str(e)}")
         raise HTTPException(status_code=500, detail="Check-in failed")
 
-@app.get("/api/")
+# Health check endpoint
+@app.get("/api/health")
 async def health_check():
-    return {"message": "QueueBee API is running", "version": "2.0"}
+    try:
+        # Test database connection
+        await db.salons.find_one()
+        return {"status": "healthy", "database": "connected", "timestamp": datetime.now()}
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Service unhealthy")
+
+# Database backup endpoints
+@app.post("/api/admin/backup")
+async def create_backup(current_salon: dict = Depends(get_current_salon)):
+    """Create a backup of the current salon's data"""
+    try:
+        # Run backup script
+        result = subprocess.run([
+            "python3", "/app/scripts/backup_database.py", "backup"
+        ], capture_output=True, text=True, cwd="/app")
+        
+        if result.returncode == 0:
+            return {
+                "status": "success",
+                "message": "Database backup created successfully",
+                "timestamp": datetime.now()
+            }
+        else:
+            logger.error(f"Backup failed: {result.stderr}")
+            raise HTTPException(status_code=500, detail="Backup failed")
+    except Exception as e:
+        logger.error(f"Error creating backup: {str(e)}")
+        raise HTTPException(status_code=500, detail="Backup creation failed")
+
+@app.post("/api/admin/restore")
+async def restore_backup(current_salon: dict = Depends(get_current_salon)):
+    """Restore database from latest backup"""
+    try:
+        # Run restore script
+        result = subprocess.run([
+            "python3", "/app/scripts/backup_database.py", "restore"
+        ], capture_output=True, text=True, cwd="/app")
+        
+        if result.returncode == 0:
+            return {
+                "status": "success",
+                "message": "Database restored successfully",
+                "timestamp": datetime.now()
+            }
+        else:
+            logger.error(f"Restore failed: {result.stderr}")
+            raise HTTPException(status_code=500, detail="Restore failed")
+    except Exception as e:
+        logger.error(f"Error restoring backup: {str(e)}")
+        raise HTTPException(status_code=500, detail="Restore failed")
+
+@app.get("/api/admin/backups")
+async def list_backups(current_salon: dict = Depends(get_current_salon)):
+    """List available backups"""
+    try:
+        # Run list script
+        result = subprocess.run([
+            "python3", "/app/scripts/backup_database.py", "list"
+        ], capture_output=True, text=True, cwd="/app")
+        
+        if result.returncode == 0:
+            return {
+                "status": "success",
+                "output": result.stdout,
+                "timestamp": datetime.now()
+            }
+        else:
+            logger.error(f"List backups failed: {result.stderr}")
+            raise HTTPException(status_code=500, detail="Failed to list backups")
+    except Exception as e:
+        logger.error(f"Error listing backups: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to list backups")
 
 # Salon Owner Authentication Routes
 @app.post("/api/salon/register")
