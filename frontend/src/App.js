@@ -2,6 +2,10 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom';
 import './App.css';
 
+// Import Components
+import CustomerManagement from './components/CustomerManagement';
+import QueueManagement from './components/QueueManagement';
+
 // Import Lucide React icons
 import { 
   Clock, 
