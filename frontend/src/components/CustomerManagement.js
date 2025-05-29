@@ -13,7 +13,11 @@ import {
   Star,
   TrendingUp,
   Eye,
-  X
+  X,
+  Upload,
+  Download,
+  FileText,
+  CheckCircle
 } from 'lucide-react';
 
 const CustomerManagement = ({ apiRequest }) => {
