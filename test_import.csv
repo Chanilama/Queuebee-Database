@@ -1,6 +1,6 @@
-Name,Phone,Email
+Customer Name,Mobile,Email
 Alice Johnson,555-1111,alice@example.com
-Bob Smith,555-2222,bob@example.com
-Carol Davis,555-3333,carol@example.com
-"David Wilson Jr.",555-4444,david@example.com
-Emma Brown,(555) 555-5555,emma@example.com
+Bob Smith,(555) 222-3333,bob@example.com
+Carol Davis,+1-555-444-5555,carol@example.com
+"David Wilson, Jr.",555.666.7777,david@example.com
+Emma Brown,5558889999,emma@example.com
