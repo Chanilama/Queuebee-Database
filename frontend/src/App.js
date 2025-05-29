@@ -734,10 +734,6 @@ const RegisterPage = () => {
   );
 };
 
-// Import Components
-import CustomerManagement from './components/CustomerManagement';
-import QueueManagement from './components/QueueManagement';
-
 // Dashboard Component
 const Dashboard = () => {
   const { user, logout } = useAuth();
