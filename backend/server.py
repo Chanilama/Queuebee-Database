@@ -465,7 +465,7 @@ async def get_customer_points_history(customer_id: str, salon_id: str = Depends(
         "customer_id": customer_id
     }).sort("timestamp", -1):
         transactions.append(transaction)
-    return transactions
+    return serialize_document(transactions)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8001)
