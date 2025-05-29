@@ -1,75 +1,446 @@
-from fastapi import FastAPI, APIRouter
-from dotenv import load_dotenv
-from starlette.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, EmailStr
 from motor.motor_asyncio import AsyncIOMotorClient
+import uvicorn
 import os
-import logging
-from pathlib import Path
-from pydantic import BaseModel, Field
-from typing import List
+from datetime import datetime, timedelta
 import uuid
-from datetime import datetime
+import hashlib
+import jwt
+from typing import Optional, List
+import logging
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
+app = FastAPI(title="QueueBee API", description="Self-Service Queue Management Platform")
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
-
-# Create the main app without a prefix
-app = FastAPI()
-
-# Create a router with the /api prefix
-api_router = APIRouter(prefix="/api")
-
-
-# Define Models
-class StatusCheck(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-
-class StatusCheckCreate(BaseModel):
-    client_name: str
-
-# Add your routes to the router instead of directly to app
-@api_router.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.dict()
-    status_obj = StatusCheck(**status_dict)
-    _ = await db.status_checks.insert_one(status_obj.dict())
-    return status_obj
-
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    status_checks = await db.status_checks.find().to_list(1000)
-    return [StatusCheck(**status_check) for status_check in status_checks]
-
-# Include the router in the main app
-app.include_router(api_router)
-
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_credentials=True,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# MongoDB connection
+MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+client = AsyncIOMotorClient(MONGO_URL)
+db = client.queuebee
 
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+# JWT configuration
+JWT_SECRET = "your-secret-key-change-in-production"
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRATION_HOURS = 24
+
+security = HTTPBearer()
+
+# Pydantic models
+class SalonOwnerRegister(BaseModel):
+    email: EmailStr
+    password: str
+    salon_name: str
+    owner_name: str
+    phone: str
+    address: str
+
+class SalonOwnerLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class CustomerCreate(BaseModel):
+    name: str
+    phone: str
+    email: Optional[str] = None
+
+class CustomerUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+
+class CheckInRequest(BaseModel):
+    customer_id: str
+    service_type: Optional[str] = "General"
+
+# Utility functions
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def verify_password(password: str, hashed: str) -> bool:
+    return hash_password(password) == hashed
+
+def create_access_token(data: dict) -> str:
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(hours=JWT_EXPIRATION_HOURS)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+async def get_current_salon(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        salon_id: str = payload.get("salon_id")
+        if salon_id is None:
+            raise HTTPException(status_code=401, detail="Invalid authentication")
+        return salon_id
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid authentication")
+
+# API Routes
+
+@app.get("/api/")
+async def health_check():
+    return {"message": "QueueBee API is running", "version": "2.0"}
+
+# Salon Owner Authentication Routes
+@app.post("/api/salon/register")
+async def register_salon_owner(salon_data: SalonOwnerRegister):
+    """Register a new salon owner"""
+    try:
+        # Check if email already exists
+        existing_salon = await db.salons.find_one({"email": salon_data.email})
+        if existing_salon:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        # Create salon record
+        salon_id = str(uuid.uuid4())
+        salon_doc = {
+            "id": salon_id,
+            "email": salon_data.email,
+            "password": hash_password(salon_data.password),
+            "salon_name": salon_data.salon_name,
+            "owner_name": salon_data.owner_name,
+            "phone": salon_data.phone,
+            "address": salon_data.address,
+            "created_at": datetime.utcnow().isoformat(),
+            "is_active": True,
+            "subscription_plan": "free",
+            "points_per_checkin": 10,  # Default points per check-in
+            "settings": {
+                "points_enabled": True,
+                "loyalty_tiers": [
+                    {"name": "Bronze", "min_points": 0, "multiplier": 1.0},
+                    {"name": "Silver", "min_points": 100, "multiplier": 1.2},
+                    {"name": "Gold", "min_points": 500, "multiplier": 1.5},
+                    {"name": "Platinum", "min_points": 1000, "multiplier": 2.0}
+                ]
+            }
+        }
+        
+        await db.salons.insert_one(salon_doc)
+        
+        # Create access token
+        access_token = create_access_token({"salon_id": salon_id})
+        
+        return {
+            "message": "Salon registered successfully",
+            "salon_id": salon_id,
+            "access_token": access_token,
+            "salon_name": salon_data.salon_name
+        }
+        
+    except Exception as e:
+        logger.error(f"Registration error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Registration failed")
+
+@app.post("/api/salon/login")
+async def login_salon_owner(login_data: SalonOwnerLogin):
+    """Login salon owner"""
+    try:
+        salon = await db.salons.find_one({"email": login_data.email})
+        if not salon or not verify_password(login_data.password, salon["password"]):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        if not salon.get("is_active", True):
+            raise HTTPException(status_code=401, detail="Account is deactivated")
+        
+        access_token = create_access_token({"salon_id": salon["id"]})
+        
+        return {
+            "access_token": access_token,
+            "salon_id": salon["id"],
+            "salon_name": salon["salon_name"],
+            "owner_name": salon["owner_name"]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Login failed")
+
+@app.get("/api/salon/profile")
+async def get_salon_profile(salon_id: str = Depends(get_current_salon)):
+    """Get salon profile"""
+    salon = await db.salons.find_one({"id": salon_id}, {"password": 0})
+    if not salon:
+        raise HTTPException(status_code=404, detail="Salon not found")
+    return salon
+
+# Customer Management Routes
+@app.post("/api/customers")
+async def create_customer(customer_data: CustomerCreate, salon_id: str = Depends(get_current_salon)):
+    """Create a new customer for the salon"""
+    try:
+        # Check if customer already exists for this salon
+        existing = await db.customers.find_one({
+            "salon_id": salon_id,
+            "$or": [
+                {"phone": customer_data.phone},
+                {"email": customer_data.email} if customer_data.email else {}
+            ]
+        })
+        
+        if existing:
+            raise HTTPException(status_code=400, detail="Customer with this phone/email already exists")
+        
+        customer_id = str(uuid.uuid4())
+        customer_doc = {
+            "id": customer_id,
+            "salon_id": salon_id,
+            "name": customer_data.name,
+            "phone": customer_data.phone,
+            "email": customer_data.email,
+            "total_points": 0,
+            "lifetime_points": 0,
+            "total_visits": 0,
+            "loyalty_tier": "Bronze",
+            "created_at": datetime.utcnow().isoformat(),
+            "last_visit": None,
+            "is_active": True
+        }
+        
+        await db.customers.insert_one(customer_doc)
+        
+        return {
+            "message": "Customer created successfully",
+            "customer": customer_doc
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Customer creation error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create customer")
+
+@app.get("/api/customers")
+async def get_customers(salon_id: str = Depends(get_current_salon)):
+    """Get all customers for the salon"""
+    customers = []
+    async for customer in db.customers.find({"salon_id": salon_id, "is_active": True}):
+        customers.append(customer)
+    return customers
+
+@app.get("/api/customers/{customer_id}")
+async def get_customer(customer_id: str, salon_id: str = Depends(get_current_salon)):
+    """Get specific customer"""
+    customer = await db.customers.find_one({"id": customer_id, "salon_id": salon_id})
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    return customer
+
+@app.put("/api/customers/{customer_id}")
+async def update_customer(customer_id: str, customer_data: CustomerUpdate, salon_id: str = Depends(get_current_salon)):
+    """Update customer information"""
+    update_data = {k: v for k, v in customer_data.dict().items() if v is not None}
+    update_data["updated_at"] = datetime.utcnow().isoformat()
+    
+    result = await db.customers.update_one(
+        {"id": customer_id, "salon_id": salon_id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    
+    updated_customer = await db.customers.find_one({"id": customer_id, "salon_id": salon_id})
+    return {"message": "Customer updated successfully", "customer": updated_customer}
+
+# Queue and Check-in Routes with Points System
+@app.post("/api/checkin")
+async def customer_checkin(checkin_data: CheckInRequest, salon_id: str = Depends(get_current_salon)):
+    """Check-in customer and award points"""
+    try:
+        # Get salon settings
+        salon = await db.salons.find_one({"id": salon_id})
+        if not salon:
+            raise HTTPException(status_code=404, detail="Salon not found")
+        
+        # Get customer
+        customer = await db.customers.find_one({"id": checkin_data.customer_id, "salon_id": salon_id})
+        if not customer:
+            raise HTTPException(status_code=404, detail="Customer not found")
+        
+        # Calculate points to award
+        base_points = salon.get("points_per_checkin", 10)
+        loyalty_tiers = salon.get("settings", {}).get("loyalty_tiers", [])
+        
+        # Find customer's current tier multiplier
+        multiplier = 1.0
+        for tier in loyalty_tiers:
+            if customer["total_points"] >= tier["min_points"]:
+                multiplier = tier["multiplier"]
+        
+        points_awarded = int(base_points * multiplier)
+        
+        # Create queue entry
+        queue_id = str(uuid.uuid4())
+        queue_entry = {
+            "id": queue_id,
+            "salon_id": salon_id,
+            "customer_id": checkin_data.customer_id,
+            "customer_name": customer["name"],
+            "service_type": checkin_data.service_type,
+            "checkin_time": datetime.utcnow().isoformat(),
+            "status": "waiting",
+            "position": 1,  # Will be calculated properly
+            "estimated_wait": 15,  # Will be calculated properly
+            "points_awarded": points_awarded
+        }
+        
+        # Calculate queue position
+        queue_count = await db.queue.count_documents({"salon_id": salon_id, "status": "waiting"})
+        queue_entry["position"] = queue_count + 1
+        queue_entry["estimated_wait"] = queue_count * 15  # 15 minutes per person
+        
+        await db.queue.insert_one(queue_entry)
+        
+        # Update customer points and stats
+        new_total_points = customer["total_points"] + points_awarded
+        new_lifetime_points = customer["lifetime_points"] + points_awarded
+        new_total_visits = customer["total_visits"] + 1
+        
+        # Determine new loyalty tier
+        new_tier = "Bronze"
+        for tier in sorted(loyalty_tiers, key=lambda x: x["min_points"], reverse=True):
+            if new_total_points >= tier["min_points"]:
+                new_tier = tier["name"]
+                break
+        
+        await db.customers.update_one(
+            {"id": checkin_data.customer_id},
+            {
+                "$set": {
+                    "total_points": new_total_points,
+                    "lifetime_points": new_lifetime_points,
+                    "total_visits": new_total_visits,
+                    "loyalty_tier": new_tier,
+                    "last_visit": datetime.utcnow().isoformat()
+                }
+            }
+        )
+        
+        # Create points transaction record
+        transaction = {
+            "id": str(uuid.uuid4()),
+            "salon_id": salon_id,
+            "customer_id": checkin_data.customer_id,
+            "transaction_type": "earned",
+            "points": points_awarded,
+            "description": f"Check-in for {checkin_data.service_type}",
+            "timestamp": datetime.utcnow().isoformat(),
+            "queue_id": queue_id
+        }
+        
+        await db.points_transactions.insert_one(transaction)
+        
+        return {
+            "message": "Check-in successful",
+            "queue_entry": queue_entry,
+            "points_awarded": points_awarded,
+            "total_points": new_total_points,
+            "loyalty_tier": new_tier,
+            "tier_upgraded": new_tier != customer["loyalty_tier"]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Check-in error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Check-in failed")
+
+@app.get("/api/queue")
+async def get_queue(salon_id: str = Depends(get_current_salon)):
+    """Get current queue for the salon"""
+    queue = []
+    async for entry in db.queue.find({"salon_id": salon_id, "status": "waiting"}).sort("checkin_time", 1):
+        queue.append(entry)
+    return queue
+
+@app.put("/api/queue/{queue_id}/complete")
+async def complete_service(queue_id: str, salon_id: str = Depends(get_current_salon)):
+    """Mark service as completed"""
+    result = await db.queue.update_one(
+        {"id": queue_id, "salon_id": salon_id},
+        {"$set": {"status": "completed", "completed_at": datetime.utcnow().isoformat()}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Queue entry not found")
+    
+    return {"message": "Service marked as completed"}
+
+@app.get("/api/analytics/dashboard")
+async def get_dashboard_analytics(salon_id: str = Depends(get_current_salon)):
+    """Get dashboard analytics for the salon"""
+    try:
+        # Get today's stats
+        today = datetime.utcnow().date().isoformat()
+        
+        # Total customers
+        total_customers = await db.customers.count_documents({"salon_id": salon_id, "is_active": True})
+        
+        # Today's check-ins
+        today_checkins = await db.queue.count_documents({
+            "salon_id": salon_id,
+            "checkin_time": {"$regex": f"^{today}"}
+        })
+        
+        # Current queue length
+        current_queue = await db.queue.count_documents({"salon_id": salon_id, "status": "waiting"})
+        
+        # Total points awarded today
+        today_points = 0
+        async for transaction in db.points_transactions.find({
+            "salon_id": salon_id,
+            "transaction_type": "earned",
+            "timestamp": {"$regex": f"^{today}"}
+        }):
+            today_points += transaction["points"]
+        
+        # Average customer points
+        customers_with_points = []
+        async for customer in db.customers.find({"salon_id": salon_id, "is_active": True}):
+            customers_with_points.append(customer.get("total_points", 0))
+        
+        avg_customer_points = sum(customers_with_points) / len(customers_with_points) if customers_with_points else 0
+        
+        return {
+            "total_customers": total_customers,
+            "today_checkins": today_checkins,
+            "current_queue_length": current_queue,
+            "today_points_awarded": today_points,
+            "average_customer_points": round(avg_customer_points, 1),
+            "active_loyalty_members": len([p for p in customers_with_points if p > 0])
+        }
+        
+    except Exception as e:
+        logger.error(f"Analytics error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch analytics")
+
+@app.get("/api/customers/{customer_id}/points-history")
+async def get_customer_points_history(customer_id: str, salon_id: str = Depends(get_current_salon)):
+    """Get customer's points transaction history"""
+    transactions = []
+    async for transaction in db.points_transactions.find({
+        "salon_id": salon_id,
+        "customer_id": customer_id
+    }).sort("timestamp", -1):
+        transactions.append(transaction)
+    return transactions
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8001)
