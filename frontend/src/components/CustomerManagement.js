@@ -202,13 +202,29 @@ const CustomerManagement = ({ apiRequest }) => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Customer Management</h1>
           <p className="text-gray-600">Manage your customer database and loyalty program</p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="mt-4 md:mt-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Add Customer</span>
-        </button>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={handleExportCustomers}
+            className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export CSV</span>
+          </button>
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Upload className="w-4 h-4" />
+            <span>Import CSV</span>
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Add Customer</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
