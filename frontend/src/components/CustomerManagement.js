@@ -735,17 +735,29 @@ const CustomerManagement = ({ apiRequest }) => {
             ) : (
               <div className="space-y-6">
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">CSV Format Requirements</h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-gray-900">CSV Format Requirements</h3>
+                    <button
+                      onClick={downloadSampleCSV}
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center space-x-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Download Sample</span>
+                    </button>
+                  </div>
                   <div className="bg-gray-50 rounded-lg p-4 text-sm">
-                    <p className="mb-2">Your CSV file should include these columns:</p>
+                    <p className="mb-2 font-medium">Required columns (case-insensitive):</p>
                     <ul className="list-disc list-inside text-gray-600 space-y-1">
-                      <li><strong>Name</strong> (required)</li>
-                      <li><strong>Phone</strong> (required)</li>
-                      <li><strong>Email</strong> (optional)</li>
+                      <li><strong>Name</strong> - Customer full name (required)</li>
+                      <li><strong>Phone</strong> - Phone number (required)</li>
+                      <li><strong>Email</strong> - Email address (optional)</li>
                     </ul>
-                    <p className="mt-3 text-gray-600">
-                      Example: <code>Name,Phone,Email</code>
-                    </p>
+                    <div className="mt-3 p-3 bg-blue-50 rounded border-l-4 border-blue-400">
+                      <p className="text-blue-800 text-xs">
+                        💡 <strong>Tips:</strong> Column headers can be "Name", "Customer Name", "Phone", "Mobile", "Email", etc.
+                        Phone numbers will be automatically cleaned (spaces, dashes, parentheses removed).
+                      </p>
+                    </div>
                   </div>
                 </div>
 
