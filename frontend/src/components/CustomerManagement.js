@@ -726,6 +726,128 @@ const CustomerManagement = ({ apiRequest }) => {
         </div>
       )}
     </div>
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Import Customers</h2>
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportFile(null);
+                  setImportResult(null);
+                }}
+                className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {importResult ? (
+              <div className="space-y-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="font-semibold text-green-800">Import Complete!</span>
+                  </div>
+                  <p className="text-green-700">
+                    Successfully imported {importResult.imported} customers
+                  </p>
+                  {importResult.errors.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-red-700 font-medium">Errors:</p>
+                      <ul className="text-red-600 text-sm">
+                        {importResult.errors.slice(0, 5).map((error, index) => (
+                          <li key={index}>• {error}</li>
+                        ))}
+                        {importResult.errors.length > 5 && (
+                          <li>• ... and {importResult.errors.length - 5} more</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setImportResult(null);
+                  }}
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">CSV Format Requirements</h3>
+                  <div className="bg-gray-50 rounded-lg p-4 text-sm">
+                    <p className="mb-2">Your CSV file should include these columns:</p>
+                    <ul className="list-disc list-inside text-gray-600 space-y-1">
+                      <li><strong>Name</strong> (required)</li>
+                      <li><strong>Phone</strong> (required)</li>
+                      <li><strong>Email</strong> (optional)</li>
+                    </ul>
+                    <p className="mt-3 text-gray-600">
+                      Example: <code>Name,Phone,Email</code>
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select CSV File
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <input
+                      type="file"
+                      accept=".csv"
+                      onChange={handleImportFile}
+                      className="hidden"
+                      id="csv-upload"
+                    />
+                    <label
+                      htmlFor="csv-upload"
+                      className="cursor-pointer text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      Choose CSV file
+                    </label>
+                    <p className="text-gray-500 text-sm mt-1">or drag and drop</p>
+                    {importFile && (
+                      <p className="text-green-600 text-sm mt-2">
+                        Selected: {importFile.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => {
+                      setShowImportModal(false);
+                      setImportFile(null);
+                    }}
+                    className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={processImport}
+                    disabled={!importFile}
+                    className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Import Customers
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
