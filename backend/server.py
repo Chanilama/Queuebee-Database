@@ -426,7 +426,7 @@ async def list_backups(current_salon: dict = Depends(get_current_salon)):
     try:
         # Run list script
         result = subprocess.run([
-            "python3", "/app/scripts/backup_database.py", "list"
+            "/root/.venv/bin/python3", "/app/scripts/backup_database.py", "list"
         ], capture_output=True, text=True, cwd="/app")
         
         if result.returncode == 0:
