@@ -9,6 +9,8 @@ from datetime import datetime, timedelta
 import uuid
 import hashlib
 import jwt
+from passlib.context import CryptContext
+import subprocess
 from typing import Optional, List, Dict, Any
 import logging
 from bson import ObjectId
