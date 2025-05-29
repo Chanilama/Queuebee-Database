@@ -404,7 +404,7 @@ async def restore_backup(current_salon: dict = Depends(get_current_salon)):
     try:
         # Run restore script
         result = subprocess.run([
-            "python3", "/app/scripts/backup_database.py", "restore"
+            "/root/.venv/bin/python3", "/app/scripts/backup_database.py", "restore"
         ], capture_output=True, text=True, cwd="/app")
         
         if result.returncode == 0:
