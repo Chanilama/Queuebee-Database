@@ -76,6 +76,60 @@ const PublicCheckIn = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+
+    // Check customer when phone number changes
+    if (name === 'phone' && value.length >= 10) {
+      checkCustomerExists(value);
+    } else if (name === 'phone' && value.length < 10) {
+      // Reset customer state if phone is too short
+      setExistingCustomer(null);
+      setIsFirstTime(null);
+    }
+  };
+
+  const checkCustomerExists = async (phone) => {
+    if (!phone || phone.length < 10) return;
+    
+    setCheckingCustomer(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/public/check-customer`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          salon_id: salonId,
+          phone: phone
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.exists) {
+          setExistingCustomer(data.customer);
+          setIsFirstTime(false);
+          // Pre-populate name and email for returning customer
+          setFormData(prev => ({
+            ...prev,
+            firstName: data.customer.name,
+            email: data.customer.email || ''
+          }));
+        } else {
+          setExistingCustomer(null);
+          setIsFirstTime(true);
+          // Clear name and email for new customer
+          setFormData(prev => ({
+            ...prev,
+            firstName: '',
+            email: ''
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error checking customer:', error);
+    } finally {
+      setCheckingCustomer(false);
+    }
   };
 
   const handleCheckIn = async (e) => {
