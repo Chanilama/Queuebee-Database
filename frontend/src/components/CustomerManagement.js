@@ -798,16 +798,58 @@ const CustomerManagement = ({ apiRequest }) => {
                     </button>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4 text-sm">
-                    <p className="mb-2 font-medium">Required columns (case-insensitive):</p>
-                    <ul className="list-disc list-inside text-gray-600 space-y-1">
-                      <li><strong>Name</strong> - Customer full name (required)</li>
-                      <li><strong>Phone</strong> - Phone number (required)</li>
-                      <li><strong>Email</strong> - Email address (optional)</li>
-                    </ul>
-                    <div className="mt-3 p-3 bg-blue-50 rounded border-l-4 border-blue-400">
+                    <p className="mb-3 font-medium text-gray-900">🧠 Smart Column Detection - Very Flexible!</p>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <p className="font-medium text-green-700">✅ NAME COLUMNS (Required - Pick Any):</p>
+                        <div className="text-gray-600 text-xs grid grid-cols-2 gap-1 ml-2">
+                          <span>• Name</span>
+                          <span>• Customer Name</span>
+                          <span>• Full Name</span>
+                          <span>• Customer</span>
+                          <span>• First Name</span>
+                          <span>• Firstname</span>
+                          <span>• First</span>
+                          <span>• Last Name</span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <p className="font-medium text-blue-700">📱 PHONE COLUMNS (Required - Pick Any):</p>
+                        <div className="text-gray-600 text-xs grid grid-cols-2 gap-1 ml-2">
+                          <span>• Phone</span>
+                          <span>• Mobile</span>
+                          <span>• SMS</span>
+                          <span>• Cell</span>
+                          <span>• Telephone</span>
+                          <span>• Tel</span>
+                          <span>• Contact</span>
+                          <span>• Phone Number</span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <p className="font-medium text-purple-700">📧 EMAIL COLUMNS (Optional - Pick Any):</p>
+                        <div className="text-gray-600 text-xs grid grid-cols-2 gap-1 ml-2">
+                          <span>• Email</span>
+                          <span>• Mail</span>
+                          <span>• E-mail</span>
+                          <span>• Email Address</span>
+                          <span>• Contact Email</span>
+                          <span>• Electronic Mail</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 p-3 bg-blue-50 rounded border-l-4 border-blue-400">
                       <p className="text-blue-800 text-xs">
-                        💡 <strong>Tips:</strong> Column headers can be "Name", "Customer Name", "Phone", "Mobile", "Email", etc.
-                        Phone numbers will be automatically cleaned (spaces, dashes, parentheses removed).
+                        💡 <strong>Super Smart Features:</strong><br/>
+                        • Automatically combines "First Name" + "Last Name" into full name<br/>
+                        • Cleans phone numbers: (555) 123-4567 → 5551234567<br/>
+                        • Removes country codes: +1-555-123-4567 → 5551234567<br/>
+                        • Case-insensitive: "PHONE", "phone", "Phone" all work<br/>
+                        • Handles quoted fields with commas: "John, Jr."
                       </p>
                     </div>
                   </div>
