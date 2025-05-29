@@ -122,52 +122,109 @@ const CustomerManagement = ({ apiRequest }) => {
 
   const handleImportFile = (e) => {
     const file = e.target.files[0];
-    if (file && file.type === 'text/csv') {
-      setImportFile(file);
-    } else {
-      alert('Please select a valid CSV file');
+    if (file) {
+      // Accept both .csv files and check content type
+      if (file.type === 'text/csv' || file.name.endsWith('.csv') || file.type === 'application/vnd.ms-excel') {
+        setImportFile(file);
+      } else {
+        alert('Please select a valid CSV file (.csv extension)');
+      }
     }
+  };
+
+  const parseCSVLine = (line) => {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    
+    result.push(current.trim());
+    return result.map(field => field.replace(/^"|"$/g, ''));
   };
 
   const processImport = async () => {
     if (!importFile) return;
 
-    const text = await importFile.text();
-    const lines = text.split('\n');
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-    
-    const results = {
-      imported: 0,
-      updated: 0,
-      errors: []
-    };
+    try {
+      const text = await importFile.text();
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      if (lines.length < 2) {
+        alert('CSV file must have at least a header row and one data row');
+        return;
+      }
 
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
+      const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
+      
+      const results = {
+        imported: 0,
+        updated: 0,
+        errors: []
+      };
 
-      try {
-        const values = line.split(',').map(v => v.replace(/"/g, '').trim());
-        const customerData = {};
-        
-        headers.forEach((header, index) => {
-          if (header.includes('name')) customerData.name = values[index];
-          if (header.includes('phone')) customerData.phone = values[index];
-          if (header.includes('email')) customerData.email = values[index];
-        });
+      // Find column indices
+      const nameIndex = headers.findIndex(h => h.includes('name') || h === 'customer name' || h === 'full name');
+      const phoneIndex = headers.findIndex(h => h.includes('phone') || h === 'mobile' || h === 'number');
+      const emailIndex = headers.findIndex(h => h.includes('email') || h === 'mail');
 
-        if (customerData.name && customerData.phone) {
+      if (nameIndex === -1) {
+        alert('CSV must have a "Name" column');
+        return;
+      }
+
+      if (phoneIndex === -1) {
+        alert('CSV must have a "Phone" column');
+        return;
+      }
+
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        try {
+          const values = parseCSVLine(line);
+          
+          const customerData = {
+            name: values[nameIndex]?.trim(),
+            phone: values[phoneIndex]?.trim(),
+            email: emailIndex >= 0 ? values[emailIndex]?.trim() : ''
+          };
+
+          // Validate required fields
+          if (!customerData.name || !customerData.phone) {
+            results.errors.push(`Line ${i + 1}: Missing name or phone`);
+            continue;
+          }
+
+          // Clean phone number (remove spaces, dashes, parentheses)
+          customerData.phone = customerData.phone.replace(/[\s\-\(\)]/g, '');
+
           await apiRequest('/customers', 'POST', customerData);
           results.imported++;
+        } catch (error) {
+          results.errors.push(`Line ${i + 1}: ${error.message}`);
         }
-      } catch (error) {
-        results.errors.push(`Line ${i + 1}: ${error.message}`);
       }
-    }
 
-    setImportResult(results);
-    await fetchCustomers();
-    setImportFile(null);
+      setImportResult(results);
+      await fetchCustomers();
+      setImportFile(null);
+      
+    } catch (error) {
+      alert(`Error reading file: ${error.message}`);
+    }
   };
 
   const getTierColor = (tier) => {
