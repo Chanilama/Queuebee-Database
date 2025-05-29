@@ -219,6 +219,12 @@ frontend:
       - working: true
         agent: "testing"
         comment: "Customer Management component is fully implemented and working correctly. The UI loads properly, and the 'Add Customer' functionality works as expected. The form includes fields for customer name, phone number, and email address. The component displays customer statistics including total customers, loyalty members, and total visits."
+      - working: false
+        agent: "testing"
+        comment: "Found a syntax error in CustomerManagement.js with duplicate Import Modal sections causing the application to fail to load properly."
+      - working: true
+        agent: "testing"
+        comment: "Fixed the syntax error in CustomerManagement.js by removing duplicate Import Modal sections. The component now loads correctly and functions as expected. Customer listing, search, and CSV export features work properly. Loyalty tier badges are displayed correctly."
 
   - task: "Queue Management"
     implemented: true
