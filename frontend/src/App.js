@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, Navigate, useNavigate } f
 import './App.css';
 
 // Utility function for clipboard fallback
-const fallbackCopyToClipboard = (text) => {
+const fallbackCopyToClipboard = (text, showNotification) => {
   // Create a temporary textarea element
   const textArea = document.createElement('textarea');
   textArea.value = text;
@@ -25,10 +25,16 @@ const fallbackCopyToClipboard = (text) => {
   textArea.select();
   
   try {
-    document.execCommand('copy');
-    alert('Link copied to clipboard!');
+    const successful = document.execCommand('copy');
+    if (successful && showNotification) {
+      showNotification('✅ Link copied to clipboard!');
+    } else if (showNotification) {
+      showNotification('❌ Failed to copy. Please copy manually.');
+    }
   } catch (err) {
-    alert('Failed to copy link. Please copy it manually.');
+    if (showNotification) {
+      showNotification('❌ Copy not supported. Please copy manually.');
+    }
   }
   
   document.body.removeChild(textArea);
