@@ -265,7 +265,7 @@ async def get_customer(customer_id: str, salon_id: str = Depends(get_current_sal
     customer = await db.customers.find_one({"id": customer_id, "salon_id": salon_id})
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
-    return customer
+    return serialize_document(customer)
 
 @app.put("/api/customers/{customer_id}")
 async def update_customer(customer_id: str, customer_data: CustomerUpdate, salon_id: str = Depends(get_current_salon)):
@@ -282,7 +282,7 @@ async def update_customer(customer_id: str, customer_data: CustomerUpdate, salon
         raise HTTPException(status_code=404, detail="Customer not found")
     
     updated_customer = await db.customers.find_one({"id": customer_id, "salon_id": salon_id})
-    return {"message": "Customer updated successfully", "customer": updated_customer}
+    return {"message": "Customer updated successfully", "customer": serialize_document(updated_customer)}
 
 # Queue and Check-in Routes with Points System
 @app.post("/api/checkin")
