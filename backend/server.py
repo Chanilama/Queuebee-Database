@@ -393,7 +393,7 @@ async def get_queue(salon_id: str = Depends(get_current_salon)):
     queue = []
     async for entry in db.queue.find({"salon_id": salon_id, "status": "waiting"}).sort("checkin_time", 1):
         queue.append(entry)
-    return queue
+    return serialize_document(queue)
 
 @app.put("/api/queue/{queue_id}/complete")
 async def complete_service(queue_id: str, salon_id: str = Depends(get_current_salon)):
