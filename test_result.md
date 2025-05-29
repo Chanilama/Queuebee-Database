@@ -26,6 +26,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "Salon owner registration, login, and profile retrieval are working correctly. JWT token authentication is properly implemented and validated."
+      - working: true
+        agent: "testing"
+        comment: "Tested login functionality with the credentials testsalon@example.com/testpass123. Initially, login failed with 401 Unauthorized because the user didn't exist in the database. Successfully registered a new account with these credentials, and then login worked correctly. The issue was not with the authentication system but that the test user needed to be created first."
 
   - task: "Customer Management"
     implemented: true
