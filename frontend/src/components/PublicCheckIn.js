@@ -294,21 +294,7 @@ const PublicCheckIn = () => {
             )}
 
             <form onSubmit={handleCheckIn} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  First Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="Enter your first name"
-                  required
-                />
-              </div>
-
+              {/* Phone Number - Always shown first */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Phone Number <span className="text-red-500">*</span>
@@ -326,54 +312,129 @@ const PublicCheckIn = () => {
                     placeholder="Enter your phone number"
                     required
                   />
+                  {checkingCustomer && (
+                    <div className="flex items-center pl-3">
+                      <Loader className="w-5 h-5 animate-spin text-blue-600" />
+                    </div>
+                  )}
                 </div>
                 <p className="text-sm text-gray-600 mt-1">
                   Required for queue notifications and loyalty points
                 </p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address (Optional)
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="Enter your email address"
-                />
-                <p className="text-sm text-gray-600 mt-1">
-                  Provide your email address to subscribe and earn bonus points
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <label className="flex items-start space-x-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="agreeToNewsletter"
-                    checked={formData.agreeToNewsletter}
-                    onChange={handleInputChange}
-                    className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">
-                    I agree to receive newsletters and accept the data privacy statement. 
-                    You may unsubscribe at any time using the link in our newsletter.
-                  </span>
-                </label>
-
-                <div className="text-xs text-gray-600 leading-relaxed">
-                  We use QueueBee as our marketing platform. By submitting this form you agree 
-                  that the personal data you provided will be transferred to QueueBee for 
-                  processing in accordance with QueueBee privacy policy.
+              {/* Welcome message for returning customers */}
+              {existingCustomer && !isFirstTime && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-green-800">
+                        Welcome back, {existingCustomer.name}! 👋
+                      </h3>
+                      <p className="text-green-700 text-sm">
+                        {existingCustomer.loyalty_tier} member • {existingCustomer.total_points} points • {existingCustomer.total_visits} visits
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
+              {/* First time customer message */}
+              {isFirstTime && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-3">
+                    <Star className="w-6 h-6 text-blue-600" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-blue-800">
+                        Welcome to {salon?.salon_name}! 🎉
+                      </h3>
+                      <p className="text-blue-700 text-sm">
+                        As a new customer, please provide your details below to earn loyalty points!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Email - Required for first time, optional for returning */}
+              {(isFirstTime !== null) && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address {isFirstTime ? <span className="text-red-500">*</span> : '(Optional)'}
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    placeholder="Enter your email address"
+                    required={isFirstTime}
+                    disabled={!isFirstTime && existingCustomer}
+                  />
+                  <p className="text-sm text-gray-600 mt-1">
+                    {isFirstTime ? 'Required for first-time customers. ' : ''}
+                    Provide your email address to subscribe and earn bonus points
+                  </p>
+                </div>
+              )}
+
+              {/* Name - Only for first time customers */}
+              {isFirstTime && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    First Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    placeholder="Enter your first name"
+                    required
+                  />
+                  <p className="text-sm text-gray-600 mt-1">
+                    Only required for first-time customers
+                  </p>
+                </div>
+              )}
+
+              {/* Newsletter agreement - Only show if customer state is determined */}
+              {(isFirstTime !== null) && (
+                <div className="space-y-4">
+                  <label className="flex items-start space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="agreeToNewsletter"
+                      checked={formData.agreeToNewsletter}
+                      onChange={handleInputChange}
+                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">
+                      I agree to receive newsletters and accept the data privacy statement. 
+                      You may unsubscribe at any time using the link in our newsletter.
+                    </span>
+                  </label>
+
+                  <div className="text-xs text-gray-600 leading-relaxed">
+                    We use QueueBee as our marketing platform. By submitting this form you agree 
+                    that the personal data you provided will be transferred to QueueBee for 
+                    processing in accordance with QueueBee privacy policy.
+                  </div>
+                </div>
+              )}
+
+              {/* Submit button - Show different states */}
               <button
                 type="submit"
-                disabled={submitting || !formData.firstName || !formData.phone}
+                disabled={
+                  submitting || 
+                  !formData.phone || 
+                  (isFirstTime && (!formData.firstName || !formData.email)) ||
+                  (isFirstTime === null)
+                }
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2"
               >
                 {submitting ? (
@@ -381,8 +442,12 @@ const PublicCheckIn = () => {
                     <Loader className="w-5 h-5 animate-spin" />
                     <span>Checking In...</span>
                   </>
+                ) : isFirstTime === null ? (
+                  <span>Enter Phone Number</span>
+                ) : existingCustomer ? (
+                  <span>Check-In Now</span>
                 ) : (
-                  <span>Check-In</span>
+                  <span>Join & Check-In</span>
                 )}
               </button>
             </form>
