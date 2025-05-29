@@ -116,6 +116,185 @@ def serialize_document(doc):
 
 # API Routes
 
+# Public API Routes (no authentication required)
+@app.get("/api/public/salon/{salon_id}")
+async def get_public_salon_info(salon_id: str):
+    """Get public salon information"""
+    salon = await db.salons.find_one({"id": salon_id}, {"password": 0, "email": 0})
+    if not salon:
+        raise HTTPException(status_code=404, detail="Salon not found")
+    return {
+        "salon_name": salon["salon_name"],
+        "address": salon["address"],
+        "owner_name": salon["owner_name"]
+    }
+
+@app.get("/api/public/queue/{salon_id}")
+async def get_public_queue(salon_id: str):
+    """Get current queue for public display"""
+    queue = []
+    async for entry in db.queue.find({"salon_id": salon_id, "status": "waiting"}).sort("checkin_time", 1):
+        # Get customer info for tier display
+        customer = await db.customers.find_one({"id": entry["customer_id"]})
+        queue_item = {
+            "id": entry["id"],
+            "position": entry["position"],
+            "customer_name": entry["customer_name"],
+            "service_type": entry["service_type"],
+            "estimated_wait": entry["estimated_wait"],
+            "points_awarded": entry.get("points_awarded", 0)
+        }
+        if customer:
+            queue_item["customer_tier"] = customer.get("loyalty_tier", "Bronze")
+        queue.append(queue_item)
+    return queue
+
+@app.post("/api/public/customer-checkin")
+async def public_customer_checkin(checkin_data: dict):
+    """Public customer check-in endpoint"""
+    try:
+        salon_id = checkin_data["salon_id"]
+        name = checkin_data["name"]
+        email = checkin_data.get("email", "")
+        phone = checkin_data.get("phone", "")
+        service_type = checkin_data.get("service_type", "Walk-in")
+        
+        # Get salon settings
+        salon = await db.salons.find_one({"id": salon_id})
+        if not salon:
+            raise HTTPException(status_code=404, detail="Salon not found")
+        
+        # Find or create customer
+        customer = await db.customers.find_one({
+            "salon_id": salon_id,
+            "$or": [
+                {"email": email} if email else {},
+                {"phone": phone} if phone else {},
+                {"name": name, "email": email} if email else {"name": name}
+            ]
+        })
+        
+        if not customer:
+            # Create new customer
+            customer_id = str(uuid.uuid4())
+            customer = {
+                "id": customer_id,
+                "salon_id": salon_id,
+                "name": name,
+                "phone": phone,
+                "email": email,
+                "total_points": 0,
+                "lifetime_points": 0,
+                "total_visits": 0,
+                "loyalty_tier": "Bronze",
+                "created_at": datetime.utcnow().isoformat(),
+                "last_visit": None,
+                "is_active": True
+            }
+            await db.customers.insert_one(customer)
+        else:
+            customer_id = customer["id"]
+            # Update customer info if provided
+            update_data = {}
+            if email and customer.get("email") != email:
+                update_data["email"] = email
+            if phone and customer.get("phone") != phone:
+                update_data["phone"] = phone
+            if update_data:
+                await db.customers.update_one({"id": customer_id}, {"$set": update_data})
+                # Refresh customer data
+                customer = await db.customers.find_one({"id": customer_id})
+        
+        # Calculate points to award
+        base_points = salon.get("points_per_checkin", 10)
+        loyalty_tiers = salon.get("settings", {}).get("loyalty_tiers", [])
+        
+        # Find customer's current tier multiplier
+        multiplier = 1.0
+        for tier in loyalty_tiers:
+            if customer["total_points"] >= tier["min_points"]:
+                multiplier = tier["multiplier"]
+        
+        points_awarded = int(base_points * multiplier)
+        
+        # Create queue entry
+        queue_id = str(uuid.uuid4())
+        
+        # Calculate queue position
+        queue_count = await db.queue.count_documents({"salon_id": salon_id, "status": "waiting"})
+        position = queue_count + 1
+        estimated_wait = queue_count * 15  # 15 minutes per person
+        
+        queue_entry = {
+            "id": queue_id,
+            "salon_id": salon_id,
+            "customer_id": customer_id,
+            "customer_name": name,
+            "service_type": service_type,
+            "checkin_time": datetime.utcnow().isoformat(),
+            "status": "waiting",
+            "position": position,
+            "estimated_wait": estimated_wait,
+            "points_awarded": points_awarded
+        }
+        
+        await db.queue.insert_one(queue_entry)
+        
+        # Update customer points and stats
+        new_total_points = customer["total_points"] + points_awarded
+        new_lifetime_points = customer["lifetime_points"] + points_awarded
+        new_total_visits = customer["total_visits"] + 1
+        
+        # Determine new loyalty tier
+        new_tier = "Bronze"
+        for tier in sorted(loyalty_tiers, key=lambda x: x["min_points"], reverse=True):
+            if new_total_points >= tier["min_points"]:
+                new_tier = tier["name"]
+                break
+        
+        await db.customers.update_one(
+            {"id": customer_id},
+            {
+                "$set": {
+                    "total_points": new_total_points,
+                    "lifetime_points": new_lifetime_points,
+                    "total_visits": new_total_visits,
+                    "loyalty_tier": new_tier,
+                    "last_visit": datetime.utcnow().isoformat()
+                }
+            }
+        )
+        
+        # Create points transaction record
+        transaction = {
+            "id": str(uuid.uuid4()),
+            "salon_id": salon_id,
+            "customer_id": customer_id,
+            "transaction_type": "earned",
+            "points": points_awarded,
+            "description": f"Check-in for {service_type}",
+            "timestamp": datetime.utcnow().isoformat(),
+            "queue_id": queue_id
+        }
+        
+        await db.points_transactions.insert_one(transaction)
+        
+        return {
+            "message": "Check-in successful",
+            "customer_name": name,
+            "queue_entry": queue_entry,
+            "points_awarded": points_awarded,
+            "total_points": new_total_points,
+            "loyalty_tier": new_tier,
+            "tier_upgraded": new_tier != customer["loyalty_tier"]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Public check-in error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Check-in failed")
+
 @app.get("/api/")
 async def health_check():
     return {"message": "QueueBee API is running", "version": "2.0"}
