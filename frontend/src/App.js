@@ -5,6 +5,7 @@ import './App.css';
 // Import Components
 import CustomerManagement from './components/CustomerManagement';
 import QueueManagement from './components/QueueManagement';
+import PublicCheckIn from './components/PublicCheckIn';
 
 // Import Lucide React icons
 import { 
