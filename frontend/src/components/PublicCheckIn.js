@@ -21,10 +21,15 @@ const PublicCheckIn = () => {
   const [checkInResult, setCheckInResult] = useState(null);
   const [error, setError] = useState('');
   
+  // Customer state
+  const [existingCustomer, setExistingCustomer] = useState(null);
+  const [isFirstTime, setIsFirstTime] = useState(null);
+  const [checkingCustomer, setCheckingCustomer] = useState(false);
+  
   const [formData, setFormData] = useState({
+    phone: '',
     firstName: '',
     email: '',
-    phone: '',
     agreeToNewsletter: false
   });
 
