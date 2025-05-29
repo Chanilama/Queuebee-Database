@@ -316,7 +316,7 @@ async def register_salon_owner(salon_data: SalonOwnerRegister):
         # Check if email already exists
         existing_salon = await db.salons.find_one({"email": salon_data.email})
         if existing_salon:
-            raise HTTPException(status_code=400, detail="Email already registered")
+            raise HTTPException(status_code=400, detail="This email is already registered. Please use a different email or try logging in instead.")
         
         # Create salon record
         salon_id = str(uuid.uuid4())
@@ -355,9 +355,12 @@ async def register_salon_owner(salon_data: SalonOwnerRegister):
             "salon_name": salon_data.salon_name
         }
         
+    except HTTPException as he:
+        logger.error(f"Registration error: {he.status_code}: {he.detail}")
+        raise he
     except Exception as e:
         logger.error(f"Registration error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Registration failed")
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
 @app.post("/api/salon/login")
 async def login_salon_owner(login_data: SalonOwnerLogin):
