@@ -203,7 +203,7 @@ async def get_salon_profile(salon_id: str = Depends(get_current_salon)):
     salon = await db.salons.find_one({"id": salon_id}, {"password": 0})
     if not salon:
         raise HTTPException(status_code=404, detail="Salon not found")
-    return salon
+    return serialize_document(salon)
 
 # Customer Management Routes
 @app.post("/api/customers")
