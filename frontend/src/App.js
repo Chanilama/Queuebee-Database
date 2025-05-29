@@ -898,6 +898,13 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Copy Notification */}
+        {copyNotification && (
+          <div className="fixed top-20 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-in slide-in-from-right duration-300">
+            {copyNotification}
+          </div>
+        )}
+
         {activeTab === 'overview' && (
           <div>
             <div className="mb-8">
