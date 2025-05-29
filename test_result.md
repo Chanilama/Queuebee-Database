@@ -231,11 +231,11 @@ frontend:
 
   - task: "Queue Management"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/components/QueueManagement.js"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "testing"
@@ -246,6 +246,9 @@ frontend:
       - working: false
         agent: "testing"
         comment: "In the live application, the Queue Management tab is not accessible through the UI. Attempting to click on 'Queue Management' in the navigation does not work, resulting in a timeout error."
+      - working: true
+        agent: "testing"
+        comment: "After further testing, the Queue Management tab is accessible in the live application. The tab is labeled 'Queue Management' and clicking on it successfully navigates to the Queue Management page. The page displays the current queue with customer information, wait times, and loyalty points. The 'Check In Customer' button is available and the queue shows real-time updates."
 
   - task: "Points & Loyalty System"
     implemented: true
