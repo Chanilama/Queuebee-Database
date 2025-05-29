@@ -664,78 +664,17 @@ const CustomerManagement = ({ apiRequest }) => {
         </div>
       )}
 
-      {/* Customer Details Modal */}
+      {/* Customer Details Component */}
       {showDetailsModal && selectedCustomer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Customer Details</h2>
-              <button
-                onClick={() => setShowDetailsModal(false)}
-                className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-2xl">
-                  {selectedCustomer.name.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900">{selectedCustomer.name}</h3>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getTierColor(selectedCustomer.loyalty_tier)}`}>
-                    {selectedCustomer.loyalty_tier} Member
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <div className="text-3xl font-bold text-blue-600">{selectedCustomer.total_points}</div>
-                  <div className="text-blue-700 font-medium">Current Points</div>
-                </div>
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <div className="text-3xl font-bold text-purple-600">{selectedCustomer.lifetime_points}</div>
-                  <div className="text-purple-700 font-medium">Lifetime Points</div>
-                </div>
-                <div className="bg-green-50 rounded-lg p-4">
-                  <div className="text-3xl font-bold text-green-600">{selectedCustomer.total_visits}</div>
-                  <div className="text-green-700 font-medium">Total Visits</div>
-                </div>
-                <div className="bg-orange-50 rounded-lg p-4">
-                  <div className="text-lg font-bold text-orange-600">
-                    {selectedCustomer.last_visit ? new Date(selectedCustomer.last_visit).toLocaleDateString() : 'Never'}
-                  </div>
-                  <div className="text-orange-700 font-medium">Last Visit</div>
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <Phone className="w-5 h-5 text-gray-400" />
-                    <span className="text-gray-900">{selectedCustomer.phone}</span>
-                  </div>
-                  {selectedCustomer.email && (
-                    <div className="flex items-center space-x-3">
-                      <Mail className="w-5 h-5 text-gray-400" />
-                      <span className="text-gray-900">{selectedCustomer.email}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="w-5 h-5 text-gray-400" />
-                    <span className="text-gray-900">
-                      Member since {new Date(selectedCustomer.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <CustomerDetails
+          customer={selectedCustomer}
+          apiRequest={apiRequest}
+          onClose={() => {
+            setShowDetailsModal(false);
+            setSelectedCustomer(null);
+          }}
+          onCustomerUpdated={handleCustomerUpdated}
+        />
       )}
 
       {/* Import Modal */}
