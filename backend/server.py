@@ -279,10 +279,13 @@ async def public_customer_checkin(checkin_data: dict):
         
         await db.points_transactions.insert_one(transaction)
         
+        # Serialize the queue entry to handle ObjectId
+        serialized_queue_entry = serialize_document(queue_entry)
+        
         return {
             "message": "Check-in successful",
             "customer_name": name,
-            "queue_entry": queue_entry,
+            "queue_entry": serialized_queue_entry,
             "points_awarded": points_awarded,
             "total_points": new_total_points,
             "loyalty_tier": new_tier,
