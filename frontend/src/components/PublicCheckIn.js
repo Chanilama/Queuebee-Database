@@ -252,25 +252,7 @@ const PublicCheckIn = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="Enter your email address"
-                  required
-                />
-                <p className="text-sm text-gray-600 mt-1">
-                  Provide your email address to subscribe and earn bonus points
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number (Optional)
+                  Phone Number <span className="text-red-500">*</span>
                 </label>
                 <div className="flex">
                   <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
@@ -283,8 +265,29 @@ const PublicCheckIn = () => {
                     onChange={handleInputChange}
                     className="flex-1 px-4 py-3 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     placeholder="Enter your phone number"
+                    required
                   />
                 </div>
+                <p className="text-sm text-gray-600 mt-1">
+                  Required for queue notifications and loyalty points
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address (Optional)
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  placeholder="Enter your email address"
+                />
+                <p className="text-sm text-gray-600 mt-1">
+                  Provide your email address to subscribe and earn bonus points
+                </p>
               </div>
 
               <div className="space-y-4">
@@ -305,13 +308,13 @@ const PublicCheckIn = () => {
                 <div className="text-xs text-gray-600 leading-relaxed">
                   We use QueueBee as our marketing platform. By submitting this form you agree 
                   that the personal data you provided will be transferred to QueueBee for 
-                  processing in accordance with QueueBee/Versca policy.
+                  processing in accordance with QueueBee privacy policy.
                 </div>
               </div>
 
               <button
                 type="submit"
-                disabled={submitting || !formData.firstName || !formData.email}
+                disabled={submitting || !formData.firstName || !formData.phone}
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2"
               >
                 {submitting ? (
