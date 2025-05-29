@@ -93,6 +93,11 @@ const CustomerManagement = ({ apiRequest }) => {
     setShowDetailsModal(true);
   };
 
+  const handleCustomerUpdated = (updatedCustomer) => {
+    setCustomers(prev => prev.map(c => c.id === updatedCustomer.id ? updatedCustomer : c));
+    setSelectedCustomer(updatedCustomer);
+  };
+
   const handleExportCustomers = () => {
     // Convert customers to CSV
     const headers = ['Name', 'Phone', 'Email', 'Total Points', 'Loyalty Tier', 'Total Visits', 'Created Date'];
