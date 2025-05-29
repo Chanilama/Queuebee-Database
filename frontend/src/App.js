@@ -49,7 +49,12 @@ import PublicCheckIn from './components/PublicCheckIn';
 import { 
   Clock, 
   Users, 
-  BarChart3, 
+  BarChart3,
+  Save,
+  Database,
+  Download,
+  Upload,
+  Shield, 
   Shield, 
   Smartphone, 
   Zap,
