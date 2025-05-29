@@ -92,6 +92,84 @@ const CustomerManagement = ({ apiRequest }) => {
     setShowDetailsModal(true);
   };
 
+  const handleExportCustomers = () => {
+    // Convert customers to CSV
+    const headers = ['Name', 'Phone', 'Email', 'Total Points', 'Loyalty Tier', 'Total Visits', 'Created Date'];
+    const csvContent = [
+      headers.join(','),
+      ...customers.map(customer => [
+        `"${customer.name}"`,
+        customer.phone,
+        customer.email || '',
+        customer.total_points,
+        customer.loyalty_tier,
+        customer.total_visits,
+        new Date(customer.created_at).toLocaleDateString()
+      ].join(','))
+    ].join('\n');
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `customers_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleImportFile = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type === 'text/csv') {
+      setImportFile(file);
+    } else {
+      alert('Please select a valid CSV file');
+    }
+  };
+
+  const processImport = async () => {
+    if (!importFile) return;
+
+    const text = await importFile.text();
+    const lines = text.split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    
+    const results = {
+      imported: 0,
+      updated: 0,
+      errors: []
+    };
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      try {
+        const values = line.split(',').map(v => v.replace(/"/g, '').trim());
+        const customerData = {};
+        
+        headers.forEach((header, index) => {
+          if (header.includes('name')) customerData.name = values[index];
+          if (header.includes('phone')) customerData.phone = values[index];
+          if (header.includes('email')) customerData.email = values[index];
+        });
+
+        if (customerData.name && customerData.phone) {
+          await apiRequest('/customers', 'POST', customerData);
+          results.imported++;
+        }
+      } catch (error) {
+        results.errors.push(`Line ${i + 1}: ${error.message}`);
+      }
+    }
+
+    setImportResult(results);
+    await fetchCustomers();
+    setImportFile(null);
+  };
+
   const getTierColor = (tier) => {
     switch (tier) {
       case 'Bronze': return 'text-orange-600 bg-orange-100';
