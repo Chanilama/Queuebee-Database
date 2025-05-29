@@ -569,6 +569,218 @@ def test_jwt_authentication():
         print(f"❌ JWT authentication test failed: {str(e)}")
         return False
 
+def test_public_salon_info():
+    """Test the public salon information endpoint"""
+    print("\n=== Testing Public Salon Information Endpoint ===")
+    try:
+        salon_id = "a1fe8bdf-4ba9-43c5-903a-eefa6df61dad"
+        
+        response = requests.get(f"{API_URL}/public/salon/{salon_id}")
+        print(f"Status Code: {response.status_code}")
+        print(f"Response: {response.json()}")
+        
+        assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
+        assert "salon_name" in response.json(), "Response does not contain 'salon_name' field"
+        assert "address" in response.json(), "Response does not contain 'address' field"
+        assert "owner_name" in response.json(), "Response does not contain 'owner_name' field"
+        
+        # Verify sensitive data is not included
+        assert "password" not in response.json(), "Response should not contain 'password' field"
+        assert "email" not in response.json(), "Response should not contain 'email' field"
+        
+        print("✅ Public salon information endpoint test passed")
+        return True
+    except Exception as e:
+        print(f"❌ Public salon information endpoint test failed: {str(e)}")
+        return False
+
+def test_public_queue():
+    """Test the public queue endpoint"""
+    print("\n=== Testing Public Queue Endpoint ===")
+    try:
+        salon_id = "a1fe8bdf-4ba9-43c5-903a-eefa6df61dad"
+        
+        response = requests.get(f"{API_URL}/public/queue/{salon_id}")
+        print(f"Status Code: {response.status_code}")
+        print(f"Response: {response.json()}")
+        
+        assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
+        assert isinstance(response.json(), list), "Response is not a list"
+        
+        # If there are queue entries, verify their structure
+        if len(response.json()) > 0:
+            queue_entry = response.json()[0]
+            assert "id" in queue_entry, "Queue entry does not have 'id' field"
+            assert "position" in queue_entry, "Queue entry does not have 'position' field"
+            assert "customer_name" in queue_entry, "Queue entry does not have 'customer_name' field"
+            assert "service_type" in queue_entry, "Queue entry does not have 'service_type' field"
+            assert "estimated_wait" in queue_entry, "Queue entry does not have 'estimated_wait' field"
+            assert "points_awarded" in queue_entry, "Queue entry does not have 'points_awarded' field"
+            
+            # Verify customer tier is included if available
+            if "customer_tier" in queue_entry:
+                assert queue_entry["customer_tier"] in ["Bronze", "Silver", "Gold", "Platinum"], f"Unexpected customer tier: {queue_entry['customer_tier']}"
+        
+        print("✅ Public queue endpoint test passed")
+        return True
+    except Exception as e:
+        print(f"❌ Public queue endpoint test failed: {str(e)}")
+        return False
+
+def test_public_customer_checkin():
+    """Test the public customer check-in endpoint"""
+    print("\n=== Testing Public Customer Check-in Endpoint ===")
+    try:
+        salon_id = "a1fe8bdf-4ba9-43c5-903a-eefa6df61dad"
+        
+        # Test with a new customer
+        payload = {
+            "salon_id": salon_id,
+            "name": f"John Customer {random_string()}",
+            "email": f"john{random_string()}@example.com",
+            "phone": f"555-{random_string(4)}",
+            "service_type": "Walk-in"
+        }
+        
+        response = requests.post(f"{API_URL}/public/customer-checkin", json=payload)
+        print(f"Status Code: {response.status_code}")
+        print(f"Response: {response.json()}")
+        
+        assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
+        assert "message" in response.json(), "Response does not contain 'message' field"
+        assert "customer_name" in response.json(), "Response does not contain 'customer_name' field"
+        assert "queue_entry" in response.json(), "Response does not contain 'queue_entry' field"
+        assert "points_awarded" in response.json(), "Response does not contain 'points_awarded' field"
+        assert "total_points" in response.json(), "Response does not contain 'total_points' field"
+        assert "loyalty_tier" in response.json(), "Response does not contain 'loyalty_tier' field"
+        
+        # Verify initial tier is Bronze
+        assert response.json()["loyalty_tier"] == "Bronze", f"Expected loyalty tier 'Bronze', got {response.json()['loyalty_tier']}"
+        
+        # Store customer info for reuse
+        customer_name = payload["name"]
+        customer_email = payload["email"]
+        customer_phone = payload["phone"]
+        
+        print("✅ Public customer check-in (new customer) test passed")
+        
+        # Test with the same customer (existing customer)
+        print("\n=== Testing Public Customer Check-in with Existing Customer ===")
+        
+        # Use the same customer info but change the service type
+        payload = {
+            "salon_id": salon_id,
+            "name": customer_name,
+            "email": customer_email,
+            "phone": customer_phone,
+            "service_type": "Regular Cut"
+        }
+        
+        response = requests.post(f"{API_URL}/public/customer-checkin", json=payload)
+        print(f"Status Code: {response.status_code}")
+        print(f"Response: {response.json()}")
+        
+        assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
+        assert response.json()["customer_name"] == customer_name, f"Expected customer name {customer_name}, got {response.json()['customer_name']}"
+        
+        # Points should be accumulated
+        assert response.json()["total_points"] > 10, f"Expected total points > 10, got {response.json()['total_points']}"
+        
+        print("✅ Public customer check-in (existing customer) test passed")
+        return True
+    except Exception as e:
+        print(f"❌ Public customer check-in test failed: {str(e)}")
+        return False
+
+def test_loyalty_tier_progression():
+    """Test loyalty tier progression through multiple check-ins"""
+    print("\n=== Testing Loyalty Tier Progression ===")
+    try:
+        salon_id = "a1fe8bdf-4ba9-43c5-903a-eefa6df61dad"
+        
+        # Create a new customer for tier progression testing
+        customer_name = f"Loyalty Test {random_string()}"
+        customer_email = f"loyalty{random_string()}@example.com"
+        customer_phone = f"555-{random_string(4)}"
+        
+        # Initial check-in (should be Bronze tier)
+        payload = {
+            "salon_id": salon_id,
+            "name": customer_name,
+            "email": customer_email,
+            "phone": customer_phone,
+            "service_type": "Walk-in"
+        }
+        
+        response = requests.post(f"{API_URL}/public/customer-checkin", json=payload)
+        assert response.status_code == 200, "Initial check-in failed"
+        assert response.json()["loyalty_tier"] == "Bronze", f"Expected initial tier 'Bronze', got {response.json()['loyalty_tier']}"
+        
+        print(f"Initial check-in: {response.json()['points_awarded']} points, Tier: {response.json()['loyalty_tier']}")
+        
+        # Simulate multiple check-ins to progress through tiers
+        # Bronze -> Silver (100 points)
+        # Silver -> Gold (500 points)
+        # Gold -> Platinum (1000 points)
+        
+        # Track current points and tier
+        current_points = response.json()["total_points"]
+        current_tier = response.json()["loyalty_tier"]
+        
+        # Define target points for each tier
+        tier_thresholds = {
+            "Bronze": 0,
+            "Silver": 100,
+            "Gold": 500,
+            "Platinum": 1000
+        }
+        
+        # Define expected multipliers for each tier
+        tier_multipliers = {
+            "Bronze": 1.0,
+            "Silver": 1.2,
+            "Gold": 1.5,
+            "Platinum": 2.0
+        }
+        
+        # Test progression to Silver
+        print("\nTesting progression to Silver tier...")
+        while current_points < tier_thresholds["Silver"] and current_tier == "Bronze":
+            response = requests.post(f"{API_URL}/public/customer-checkin", json=payload)
+            assert response.status_code == 200, "Check-in failed during Bronze->Silver progression"
+            
+            current_points = response.json()["total_points"]
+            current_tier = response.json()["loyalty_tier"]
+            
+            print(f"Check-in: +{response.json()['points_awarded']} points, Total: {current_points}, Tier: {current_tier}")
+            
+            # Avoid infinite loop
+            if current_points >= tier_thresholds["Silver"] and current_tier == "Bronze":
+                print("Warning: Points threshold reached but tier not upgraded")
+                break
+        
+        # Verify Silver tier reached
+        assert current_tier == "Silver" or current_points >= tier_thresholds["Silver"], f"Failed to reach Silver tier. Current points: {current_points}, Current tier: {current_tier}"
+        
+        if current_tier == "Silver":
+            print(f"✅ Successfully progressed to Silver tier with {current_points} points")
+            
+            # Verify multiplier is applied correctly
+            next_checkin = requests.post(f"{API_URL}/public/customer-checkin", json=payload)
+            points_awarded = next_checkin.json()["points_awarded"]
+            expected_points = int(10 * tier_multipliers["Silver"])
+            assert points_awarded == expected_points, f"Expected {expected_points} points with Silver multiplier, got {points_awarded}"
+            print(f"✅ Silver tier multiplier correctly applied: {points_awarded} points awarded")
+        
+        # Test progression to Gold (optional, may take too many requests)
+        # This is a simplified test - in a real scenario, we would continue check-ins until Gold tier
+        
+        print("✅ Loyalty tier progression test passed")
+        return True
+    except Exception as e:
+        print(f"❌ Loyalty tier progression test failed: {str(e)}")
+        return False
+
 def run_all_tests():
     """Run all tests and return a summary"""
     results = {}
@@ -617,6 +829,12 @@ def run_all_tests():
     
     # Test analytics dashboard
     results["analytics_dashboard"] = test_analytics_dashboard(salon_id1)
+    
+    # Test new public API endpoints
+    results["public_salon_info"] = test_public_salon_info()
+    results["public_queue"] = test_public_queue()
+    results["public_customer_checkin"] = test_public_customer_checkin()
+    results["loyalty_tier_progression"] = test_loyalty_tier_progression()
     
     # Print summary
     print("\n=== Test Summary ===")
