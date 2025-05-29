@@ -27,7 +27,10 @@ const CustomerManagement = ({ apiRequest }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [importFile, setImportFile] = useState(null);
+  const [importResult, setImportResult] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
