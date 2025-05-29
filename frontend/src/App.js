@@ -595,8 +595,29 @@ const RegisterPage = () => {
     setLoading(true);
     setError('');
 
+    // Client-side validation
+    if (!formData.email || !formData.password || !formData.salon_name || !formData.owner_name || !formData.phone || !formData.address) {
+      setError('Please fill in all required fields');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
       setLoading(false);
       return;
     }
