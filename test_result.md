@@ -206,7 +206,7 @@ frontend:
         comment: "Dashboard loads correctly with salon information ('Test Salon Demo' and 'Demo Owner'). Analytics cards display properly. Tab navigation between Overview, Queue Management, Customers, and Settings works as expected."
       - working: true
         agent: "testing"
-        comment: "In the live application, the dashboard loads correctly with salon information ('Test Salon Demo'). Analytics cards display properly. Tab navigation works for Overview, Customers, and Settings, but the Queue tab is missing from the navigation."
+        comment: "In the live application, the dashboard loads correctly with salon information ('Test Salon Demo'). Analytics cards display properly. Tab navigation works for Overview, Queue Management, Customers, and Settings. All tabs are accessible and display their respective content correctly."
 
   - task: "Customer Management"
     implemented: true
