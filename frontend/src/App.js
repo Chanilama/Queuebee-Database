@@ -935,7 +935,7 @@ const Dashboard = () => {
             )}
 
             {/* Quick Actions */}
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mb-8">
               <h3 className="text-xl font-semibold text-gray-900 mb-6">Quick Actions</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <button
@@ -959,6 +959,38 @@ const Dashboard = () => {
                   <BarChart3 className="w-6 h-6" />
                   <span>View Queue</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Public Check-In Link */}
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                <Smartphone className="w-6 h-6 text-blue-600" />
+                <span>Customer Self Check-In</span>
+              </h3>
+              <p className="text-gray-700 mb-4">
+                Share this link with your customers so they can check themselves in and earn loyalty points automatically!
+              </p>
+              <div className="bg-white rounded-lg p-4 border border-gray-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-600">Public Check-In URL:</span>
+                  <button
+                    onClick={() => {
+                      const url = `${window.location.origin}/checkin/${user?.salon_id}`;
+                      navigator.clipboard.writeText(url);
+                      alert('Link copied to clipboard!');
+                    }}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  >
+                    Copy Link
+                  </button>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3 font-mono text-sm text-gray-800 break-all">
+                  {window.location.origin}/checkin/{user?.salon_id}
+                </div>
+              </div>
+              <div className="mt-4 text-sm text-gray-600">
+                💡 <strong>Pro Tip:</strong> Add this link to your website, social media, or create a QR code for easy customer access!
               </div>
             </div>
           </div>
