@@ -134,6 +134,48 @@ async def get_public_salon_info(salon_id: str):
         "owner_name": salon["owner_name"]
     }
 
+@app.post("/api/public/check-customer")
+async def check_customer_exists(customer_data: dict):
+    """Check if customer exists by phone number"""
+    try:
+        salon_id = customer_data["salon_id"]
+        phone = customer_data.get("phone", "")
+        
+        if not phone:
+            return {"exists": False}
+        
+        # Clean phone number
+        import re
+        cleaned_phone = re.sub(r'[\s\-\(\)\.\+]', '', phone)
+        if cleaned_phone.startswith('1') and len(cleaned_phone) == 11:
+            cleaned_phone = cleaned_phone[1:]
+        
+        # Find customer by phone number
+        customer = await db.customers.find_one({
+            "salon_id": salon_id,
+            "phone": cleaned_phone,
+            "is_active": True
+        })
+        
+        if customer:
+            return {
+                "exists": True,
+                "customer": {
+                    "id": customer["id"],
+                    "name": customer["name"],
+                    "email": customer.get("email", ""),
+                    "total_points": customer.get("total_points", 0),
+                    "loyalty_tier": customer.get("loyalty_tier", "Bronze"),
+                    "total_visits": customer.get("total_visits", 0)
+                }
+            }
+        else:
+            return {"exists": False}
+            
+    except Exception as e:
+        logger.error(f"Check customer error: {str(e)}")
+        return {"exists": False}
+
 @app.get("/api/public/queue/{salon_id}")
 async def get_public_queue(salon_id: str):
     """Get current queue for public display"""
