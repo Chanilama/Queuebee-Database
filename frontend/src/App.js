@@ -1082,18 +1082,7 @@ const Dashboard = () => {
         {activeTab === 'queue' && <QueueManagement apiRequest={apiRequest} />}
         {activeTab === 'customers' && <CustomerManagement apiRequest={apiRequest} />}
         
-        {activeTab === 'settings' && (
-          <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-200 text-center">
-            <Settings className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Settings</h3>
-            <p className="text-gray-600 mb-6">Salon settings and configuration options coming soon!</p>
-            <div className="bg-blue-50 rounded-lg p-4">
-              <p className="text-blue-800 font-medium">Current salon: {user?.salon_name}</p>
-              <p className="text-blue-600 text-sm">Points per check-in: 10 points</p>
-              <p className="text-blue-600 text-sm">Loyalty tiers: Bronze, Silver, Gold, Platinum</p>
-            </div>
-          </div>
-        )}
+        {activeTab === 'settings' && <SettingsPanel apiRequest={apiRequest} user={user} />}
       </div>
     </div>
   );
