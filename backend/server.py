@@ -242,7 +242,7 @@ async def create_customer(customer_data: CustomerCreate, salon_id: str = Depends
         
         return {
             "message": "Customer created successfully",
-            "customer": customer_doc
+            "customer": serialize_document(customer_doc)
         }
         
     except HTTPException:
