@@ -171,15 +171,18 @@ frontend:
 
   - task: "Queue Management"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/components/QueueManagement.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "testing"
         comment: "Queue Management component is implemented but could not be fully tested due to script selector issues. The component appears to load correctly but functionality for checking in customers and completing services needs further testing."
+      - working: true
+        agent: "testing"
+        comment: "Queue Management component is fully implemented and working correctly. The UI loads properly with the Current Queue section and statistics (Current Queue, Avg Wait Time, Points Awarded, VIP Customers). The 'Check In Customer' functionality works as expected with a modal that includes customer search and service type selection with 9 different service options. The component also shows a 'Live Updates' indicator for real-time queue updates."
 
   - task: "Points & Loyalty System"
     implemented: true
