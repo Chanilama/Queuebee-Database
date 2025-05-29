@@ -188,6 +188,7 @@ async def public_customer_checkin(checkin_data: dict):
                 "name": name,
                 "phone": phone,
                 "email": email,
+                "notes": "",  # Initialize with empty notes
                 "total_points": 0,
                 "lifetime_points": 0,
                 "total_visits": 0,
