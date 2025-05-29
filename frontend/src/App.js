@@ -1019,17 +1019,17 @@ const Dashboard = () => {
                       // Try modern clipboard API first
                       if (navigator.clipboard && window.isSecureContext) {
                         navigator.clipboard.writeText(url).then(() => {
-                          alert('Link copied to clipboard!');
+                          showCopyNotification('✅ Link copied to clipboard!');
                         }).catch(() => {
                           // Fallback: Select and copy using document.execCommand
-                          fallbackCopyToClipboard(url);
+                          fallbackCopyToClipboard(url, showCopyNotification);
                         });
                       } else {
                         // Fallback for older browsers or insecure contexts
-                        fallbackCopyToClipboard(url);
+                        fallbackCopyToClipboard(url, showCopyNotification);
                       }
                     }}
-                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium hover:bg-blue-50 px-2 py-1 rounded transition-colors"
                   >
                     Copy Link
                   </button>
