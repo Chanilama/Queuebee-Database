@@ -416,6 +416,7 @@ async def create_customer(customer_data: CustomerCreate, salon_id: str = Depends
             "name": customer_data.name,
             "phone": customer_data.phone,
             "email": customer_data.email,
+            "notes": "",  # Initialize with empty notes
             "total_points": 0,
             "lifetime_points": 0,
             "total_visits": 0,
