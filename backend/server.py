@@ -382,7 +382,7 @@ async def create_backup(current_salon: dict = Depends(get_current_salon)):
     try:
         # Run backup script
         result = subprocess.run([
-            "python3", "/app/scripts/backup_database.py", "backup"
+            "/root/.venv/bin/python3", "/app/scripts/backup_database.py", "backup"
         ], capture_output=True, text=True, cwd="/app")
         
         if result.returncode == 0:
