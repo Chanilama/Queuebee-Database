@@ -281,8 +281,10 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
+  current_focus: 
+    - "Queue Management"
+  stuck_tasks: 
+    - "Queue Management"
   test_all: false
   test_priority: "high_first"
 
