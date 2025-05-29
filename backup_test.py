@@ -113,13 +113,18 @@ def test_create_backup(access_token):
         print(f"❌ Create backup endpoint test failed: {str(e)}")
         return False
 
-def test_restore_backup(access_token):
+def test_restore_backup(access_token, auto_skip=True):
     """Test restoring from a backup"""
     print("\n=== Testing Restore Backup Endpoint ===")
     print("⚠️ WARNING: This will restore the database from the latest backup!")
     print("⚠️ This could potentially overwrite current data.")
     
-    # Ask for confirmation
+    # Skip by default in automated testing
+    if auto_skip:
+        print("Skipping restore test in automated mode.")
+        return None
+    
+    # Ask for confirmation in interactive mode
     confirm = input("Do you want to proceed with testing the restore endpoint? (yes/no): ")
     if confirm.lower() != "yes":
         print("Skipping restore test.")
