@@ -364,10 +364,25 @@ frontend:
         agent: "testing"
         comment: "Responsive design is working correctly. The application renders properly on desktop, tablet (768x1024), and mobile (390x844) screen sizes."
 
+  - task: "Backup and Restore System"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "Initial testing of the backup endpoints failed. The backup script was being called with the system Python instead of the virtual environment Python, causing import errors for the 'motor' library."
+      - working: true
+        agent: "testing"
+        comment: "Fixed the backup system by modifying the server.py file to use the virtual environment Python (/root/.venv/bin/python3) when calling the backup_database.py script. After this fix, all backup endpoints (/api/admin/backup, /api/admin/restore, /api/admin/backups) are working correctly. Successfully created a new backup and verified that it appears in the list of available backups. The backup directory contains the expected files and the 'latest' symlink is correctly updated."
+
 metadata:
   created_by: "testing_agent"
   version: "1.0"
-  test_sequence: 5
+  test_sequence: 6
   run_ui: true
 
 test_plan:
