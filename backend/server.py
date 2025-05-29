@@ -472,6 +472,81 @@ async def update_customer(customer_id: str, customer_data: CustomerUpdate, salon
     updated_customer = await db.customers.find_one({"id": customer_id, "salon_id": salon_id})
     return {"message": "Customer updated successfully", "customer": serialize_document(updated_customer)}
 
+@app.delete("/api/customers/{customer_id}")
+async def delete_customer(customer_id: str, salon_id: str = Depends(get_current_salon)):
+    """Delete customer (soft delete)"""
+    result = await db.customers.update_one(
+        {"id": customer_id, "salon_id": salon_id},
+        {"$set": {"is_active": False, "deleted_at": datetime.utcnow().isoformat()}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    
+    return {"message": "Customer deleted successfully"}
+
+@app.put("/api/customers/{customer_id}/points")
+async def update_customer_points(customer_id: str, points_data: UpdateCustomerPoints, salon_id: str = Depends(get_current_salon)):
+    """Update customer points manually"""
+    try:
+        customer = await db.customers.find_one({"id": customer_id, "salon_id": salon_id})
+        if not customer:
+            raise HTTPException(status_code=404, detail="Customer not found")
+        
+        # Calculate new points (can be positive or negative adjustment)
+        old_points = customer["total_points"]
+        new_points = max(0, points_data.points)  # Don't allow negative points
+        points_difference = new_points - old_points
+        
+        # Update customer points
+        await db.customers.update_one(
+            {"id": customer_id},
+            {"$set": {"total_points": new_points}}
+        )
+        
+        # Create points transaction record
+        transaction = {
+            "id": str(uuid.uuid4()),
+            "salon_id": salon_id,
+            "customer_id": customer_id,
+            "transaction_type": "manual_adjustment",
+            "points": points_difference,
+            "description": f"Manual points adjustment: {points_data.reason}",
+            "timestamp": datetime.utcnow().isoformat(),
+            "admin_action": True
+        }
+        
+        await db.points_transactions.insert_one(transaction)
+        
+        # Recalculate loyalty tier
+        salon = await db.salons.find_one({"id": salon_id})
+        loyalty_tiers = salon.get("settings", {}).get("loyalty_tiers", [])
+        
+        new_tier = "Bronze"
+        for tier in sorted(loyalty_tiers, key=lambda x: x["min_points"], reverse=True):
+            if new_points >= tier["min_points"]:
+                new_tier = tier["name"]
+                break
+        
+        await db.customers.update_one(
+            {"id": customer_id},
+            {"$set": {"loyalty_tier": new_tier}}
+        )
+        
+        updated_customer = await db.customers.find_one({"id": customer_id, "salon_id": salon_id})
+        
+        return {
+            "message": "Points updated successfully",
+            "customer": updated_customer,
+            "points_adjustment": points_difference
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Points update error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to update points")
+
 # Queue and Check-in Routes with Points System
 @app.post("/api/checkin")
 async def customer_checkin(checkin_data: CheckInRequest, salon_id: str = Depends(get_current_salon)):
