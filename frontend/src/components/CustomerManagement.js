@@ -193,18 +193,38 @@ const CustomerManagement = ({ apiRequest }) => {
         errors: []
       };
 
-      // Find column indices
-      const nameIndex = headers.findIndex(h => h.includes('name') || h === 'customer name' || h === 'full name');
-      const phoneIndex = headers.findIndex(h => h.includes('phone') || h === 'mobile' || h === 'number');
-      const emailIndex = headers.findIndex(h => h.includes('email') || h === 'mail');
+      // Smart column detection - much more flexible
+      const findColumn = (patterns) => {
+        return headers.findIndex(h => patterns.some(pattern => h.includes(pattern) || h === pattern));
+      };
 
-      if (nameIndex === -1) {
-        alert('CSV must have a "Name" column');
+      // Find name columns (single name or first/last name)
+      const nameIndex = findColumn(['name', 'customer name', 'full name', 'customer']);
+      const firstNameIndex = findColumn(['first name', 'firstname', 'first', 'fname']);
+      const lastNameIndex = findColumn(['last name', 'lastname', 'last', 'lname', 'surname']);
+      
+      // Find phone columns (very flexible)
+      const phoneIndex = findColumn([
+        'phone', 'mobile', 'sms', 'cell', 'telephone', 'tel', 'contact', 
+        'phone number', 'mobile number', 'cell phone', 'contact number'
+      ]);
+      
+      // Find email columns
+      const emailIndex = findColumn([
+        'email', 'mail', 'e-mail', 'email address', 'e-mail address', 
+        'electronic mail', 'contact email'
+      ]);
+
+      // Validate that we have either a name column or first/last name columns
+      const hasName = nameIndex >= 0 || (firstNameIndex >= 0 && lastNameIndex >= 0) || firstNameIndex >= 0;
+      
+      if (!hasName) {
+        alert('CSV must have a "Name" column or "First Name" column (Last Name optional)');
         return;
       }
 
       if (phoneIndex === -1) {
-        alert('CSV must have a "Phone" column');
+        alert('CSV must have a phone/mobile/SMS column');
         return;
       }
 
@@ -215,10 +235,22 @@ const CustomerManagement = ({ apiRequest }) => {
         try {
           const values = parseCSVLine(line);
           
+          // Smart name handling
+          let customerName = '';
+          if (nameIndex >= 0 && values[nameIndex]?.trim()) {
+            // Use full name column
+            customerName = values[nameIndex].trim();
+          } else if (firstNameIndex >= 0 || lastNameIndex >= 0) {
+            // Combine first and last name
+            const firstName = firstNameIndex >= 0 ? (values[firstNameIndex]?.trim() || '') : '';
+            const lastName = lastNameIndex >= 0 ? (values[lastNameIndex]?.trim() || '') : '';
+            customerName = `${firstName} ${lastName}`.trim();
+          }
+
           const customerData = {
-            name: values[nameIndex]?.trim(),
-            phone: values[phoneIndex]?.trim(),
-            email: emailIndex >= 0 ? values[emailIndex]?.trim() : ''
+            name: customerName,
+            phone: values[phoneIndex]?.trim() || '',
+            email: emailIndex >= 0 ? (values[emailIndex]?.trim() || '') : ''
           };
 
           // Validate required fields
@@ -227,8 +259,19 @@ const CustomerManagement = ({ apiRequest }) => {
             continue;
           }
 
-          // Clean phone number (remove spaces, dashes, parentheses)
-          customerData.phone = customerData.phone.replace(/[\s\-\(\)]/g, '');
+          // Clean phone number (remove spaces, dashes, parentheses, dots, plus signs)
+          customerData.phone = customerData.phone.replace(/[\s\-\(\)\.\+]/g, '');
+          
+          // Remove common prefixes like country codes
+          if (customerData.phone.startsWith('1') && customerData.phone.length === 11) {
+            customerData.phone = customerData.phone.substring(1);
+          }
+
+          // Validate phone number (should be 10 digits for US)
+          if (!/^\d{10,}$/.test(customerData.phone)) {
+            results.errors.push(`Line ${i + 1}: Invalid phone number format`);
+            continue;
+          }
 
           await apiRequest('/customers', 'POST', customerData);
           results.imported++;
