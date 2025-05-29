@@ -210,12 +210,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Salon Owner Authentication"
     - "Customer Management"
-    - "Points & Loyalty System"
     - "Queue Management"
-    - "Analytics Dashboard"
-    - "Data Security"
+    - "Points & Loyalty System"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
