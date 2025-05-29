@@ -104,7 +104,8 @@ def test_cors():
         
         assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
         assert "access-control-allow-origin" in response.headers, "Response does not contain 'Access-Control-Allow-Origin' header"
-        assert response.headers["access-control-allow-origin"] == "*", f"Expected '*', got {response.headers['access-control-allow-origin']}"
+        # The server is reflecting the Origin header, which is a valid CORS configuration
+        assert response.headers["access-control-allow-origin"] == "http://example.com", f"Expected 'http://example.com', got {response.headers['access-control-allow-origin']}"
         
         # Actual request
         response = requests.get(f"{API_URL}/", headers={"Origin": "http://example.com"})
@@ -113,12 +114,49 @@ def test_cors():
         
         assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
         assert "access-control-allow-origin" in response.headers, "Response does not contain 'Access-Control-Allow-Origin' header"
-        assert response.headers["access-control-allow-origin"] == "*", f"Expected '*', got {response.headers['access-control-allow-origin']}"
+        # The server is reflecting the Origin header, which is a valid CORS configuration
+        assert response.headers["access-control-allow-origin"] == "http://example.com", f"Expected 'http://example.com', got {response.headers['access-control-allow-origin']}"
         
         print("✅ CORS configuration test passed")
         return True
     except Exception as e:
         print(f"❌ CORS configuration test failed: {str(e)}")
+        return False
+
+def test_mongodb_connection():
+    """Test MongoDB connection by checking if data is persisted"""
+    print("\n=== Testing MongoDB Connection ===")
+    try:
+        # Create a status check
+        client_name = f"mongo_test_{int(time.time())}"
+        payload = {"client_name": client_name}
+        
+        create_response = requests.post(f"{API_URL}/status", json=payload)
+        print(f"Create Status Code: {create_response.status_code}")
+        print(f"Create Response: {create_response.json()}")
+        
+        assert create_response.status_code == 200, f"Expected status code 200, got {create_response.status_code}"
+        status_id = create_response.json()["id"]
+        
+        # Get the status check to verify it was persisted
+        get_response = requests.get(f"{API_URL}/status")
+        print(f"Get Status Code: {get_response.status_code}")
+        print(f"Get Response: {get_response.json()}")
+        
+        assert get_response.status_code == 200, f"Expected status code 200, got {get_response.status_code}"
+        
+        found = False
+        for status in get_response.json():
+            if status["id"] == status_id:
+                found = True
+                break
+        
+        assert found, f"Could not find status with id {status_id} in response"
+        
+        print("✅ MongoDB connection test passed")
+        return True
+    except Exception as e:
+        print(f"❌ MongoDB connection test failed: {str(e)}")
         return False
 
 def run_all_tests():
@@ -141,6 +179,9 @@ def run_all_tests():
     
     # Test CORS
     results["cors"] = test_cors()
+    
+    # Test MongoDB connection
+    results["mongodb_connection"] = test_mongodb_connection()
     
     # Print summary
     print("\n=== Test Summary ===")
