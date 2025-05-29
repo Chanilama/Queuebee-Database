@@ -151,6 +151,7 @@ const CustomerManagement = ({ apiRequest }) => {
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
   };
+  const parseCSVLine = (line) => {
     const result = [];
     let current = '';
     let inQuotes = false;
