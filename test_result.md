@@ -117,6 +117,57 @@ backend:
         agent: "testing"
         comment: "Data security is properly implemented. Multi-tenant isolation ensures salon owners can only access their own data. JWT token authentication is properly validated for all protected endpoints."
 
+  - task: "Public Salon Information API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Public salon information API endpoint (/api/public/salon/{salon_id}) is working correctly. Returns salon name, address, and owner name without sensitive data."
+
+  - task: "Public Queue API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Public queue API endpoint (/api/public/queue/{salon_id}) is working correctly. Returns queue entries with customer positions, wait times, and points awarded."
+
+  - task: "Public Customer Check-in API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "Public customer check-in API endpoint (/api/public/customer-checkin) was failing with a MongoDB ObjectId serialization error."
+      - working: true
+        agent: "testing"
+        comment: "Fixed the MongoDB ObjectId serialization issue in the public customer check-in endpoint by using the serialize_document function. The endpoint now works correctly, creating/finding customers, adding them to the queue, and awarding points based on loyalty tier."
+
+  - task: "Loyalty Tier Progression"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Loyalty tier progression is working correctly. Customers progress from Bronze to Silver to Gold to Platinum based on points thresholds. Points multipliers are correctly applied based on tier (Bronze=1x, Silver=1.2x, Gold=1.5x, Platinum=2x)."
+
 frontend:
   - task: "Landing Page Flow"
     implemented: true
@@ -214,7 +265,7 @@ frontend:
 metadata:
   created_by: "testing_agent"
   version: "1.0"
-  test_sequence: 2
+  test_sequence: 3
   run_ui: false
 
 test_plan:
@@ -232,3 +283,5 @@ agent_communication:
     message: "Frontend testing completed with partial success. Landing page, authentication, dashboard functionality, and responsive design are working correctly. Customer Management, Queue Management, and Points & Loyalty System components are implemented but could not be fully tested due to script selector issues. The application successfully renders on different screen sizes and the core authentication flow with the test credentials works as expected. Further testing is needed for the customer and queue management features."
   - agent: "testing"
     message: "Comprehensive frontend testing completed successfully. All components are working correctly: Landing Page Flow, Authentication, Dashboard Functionality, Customer Management, Queue Management, Points & Loyalty System, and Responsive Design. The application successfully authenticates with the test credentials (testsalon@example.com/testpass123), displays the dashboard with salon information, allows adding and managing customers, enables customer check-ins with service selection, and implements the loyalty points system with tier badges. The UI is responsive and renders correctly on different screen sizes."
+  - agent: "testing"
+    message: "Testing of the new public check-in features completed successfully. All three new public API endpoints are working correctly: Public Salon Information API, Public Queue API, and Public Customer Check-in API. Fixed a MongoDB ObjectId serialization issue in the public customer check-in endpoint. The loyalty tier progression system is working correctly, with customers progressing through tiers (Bronze→Silver→Gold→Platinum) based on points thresholds and receiving the correct tier multipliers for points (Bronze=1x, Silver=1.2x, Gold=1.5x, Platinum=2x)."
