@@ -977,8 +977,19 @@ const Dashboard = () => {
                   <button
                     onClick={() => {
                       const url = `${window.location.origin}/checkin/${user?.salon_id}`;
-                      navigator.clipboard.writeText(url);
-                      alert('Link copied to clipboard!');
+                      
+                      // Try modern clipboard API first
+                      if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(url).then(() => {
+                          alert('Link copied to clipboard!');
+                        }).catch(() => {
+                          // Fallback: Select and copy using document.execCommand
+                          fallbackCopyToClipboard(url);
+                        });
+                      } else {
+                        // Fallback for older browsers or insecure contexts
+                        fallbackCopyToClipboard(url);
+                      }
                     }}
                     className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                   >
