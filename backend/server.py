@@ -257,7 +257,7 @@ async def get_customers(salon_id: str = Depends(get_current_salon)):
     customers = []
     async for customer in db.customers.find({"salon_id": salon_id, "is_active": True}):
         customers.append(customer)
-    return customers
+    return serialize_document(customers)
 
 @app.get("/api/customers/{customer_id}")
 async def get_customer(customer_id: str, salon_id: str = Depends(get_current_salon)):
