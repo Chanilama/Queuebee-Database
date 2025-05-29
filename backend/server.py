@@ -91,6 +91,29 @@ async def get_current_salon(credentials: HTTPAuthorizationCredentials = Depends(
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid authentication")
 
+# Helper function to handle MongoDB document serialization
+def serialize_document(doc):
+    if doc is None:
+        return None
+    
+    if isinstance(doc, list):
+        return [serialize_document(item) for item in doc]
+    
+    if isinstance(doc, dict):
+        for k, v in doc.items():
+            if isinstance(v, ObjectId):
+                doc[k] = str(v)
+            elif isinstance(v, (dict, list)):
+                doc[k] = serialize_document(v)
+        
+        # Remove _id field if it exists
+        if '_id' in doc:
+            del doc['_id']
+            
+        return doc
+    
+    return doc
+
 # API Routes
 
 @app.get("/api/")
