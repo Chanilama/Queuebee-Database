@@ -19,6 +19,7 @@ import {
   FileText,
   CheckCircle
 } from 'lucide-react';
+import CustomerDetails from './CustomerDetails';
 
 const CustomerManagement = ({ apiRequest }) => {
   const [customers, setCustomers] = useState([]);
