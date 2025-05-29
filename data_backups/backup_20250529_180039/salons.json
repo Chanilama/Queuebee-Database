@@ -1,0 +1,80 @@
+[
+  {
+    "_id": "68389a52098c91ee21911ca1",
+    "id": "334810e0-196d-4d0d-b837-507feea4d579",
+    "email": "testsalon@example.com",
+    "password": "7e6e0c3079a08c5cc6036789b57e951f65f82383913ba1a49ae992544f1b4b6e",
+    "salon_name": "Test Salon Demo",
+    "owner_name": "Demo Owner",
+    "phone": "1234567890",
+    "address": "123 Test St",
+    "created_at": "2025-05-29T17:33:06.009425",
+    "is_active": true,
+    "subscription_plan": "free",
+    "points_per_checkin": 10,
+    "settings": {
+      "points_enabled": true,
+      "loyalty_tiers": [
+        {
+          "name": "Bronze",
+          "min_points": 0,
+          "multiplier": 1.0
+        },
+        {
+          "name": "Silver",
+          "min_points": 100,
+          "multiplier": 1.2
+        },
+        {
+          "name": "Gold",
+          "min_points": 500,
+          "multiplier": 1.5
+        },
+        {
+          "name": "Platinum",
+          "min_points": 1000,
+          "multiplier": 2.0
+        }
+      ]
+    }
+  },
+  {
+    "_id": "68389fdbd429640b5e6f3fd5",
+    "id": "731bd579-81b3-44cf-8dc2-92fb52741d22",
+    "email": "myfairlady100grand@gmail.com",
+    "password": "b2dbf1be56a201752d016d0126066ffa41666ebd23469c6261fbbfdb21f0b7e3",
+    "salon_name": "My Fair Lady Salon",
+    "owner_name": "Shilpi Goel",
+    "phone": "+16503725130",
+    "address": "100 Grand Ln ste d, Foster City, CA 94404",
+    "created_at": "2025-05-29T17:56:43.656274",
+    "is_active": true,
+    "subscription_plan": "free",
+    "points_per_checkin": 10,
+    "settings": {
+      "points_enabled": true,
+      "loyalty_tiers": [
+        {
+          "name": "Bronze",
+          "min_points": 0,
+          "multiplier": 1.0
+        },
+        {
+          "name": "Silver",
+          "min_points": 100,
+          "multiplier": 1.2
+        },
+        {
+          "name": "Gold",
+          "min_points": 500,
+          "multiplier": 1.5
+        },
+        {
+          "name": "Platinum",
+          "min_points": 1000,
+          "multiplier": 2.0
+        }
+      ]
+    }
+  }
+]
