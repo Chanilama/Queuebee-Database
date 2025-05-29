@@ -603,7 +603,6 @@ const CustomerManagement = ({ apiRequest }) => {
           </div>
         </div>
       )}
-    </div>
 
       {/* Import Modal */}
       {showImportModal && (
