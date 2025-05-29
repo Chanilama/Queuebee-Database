@@ -374,7 +374,7 @@ async def customer_checkin(checkin_data: CheckInRequest, salon_id: str = Depends
         
         return {
             "message": "Check-in successful",
-            "queue_entry": queue_entry,
+            "queue_entry": serialize_document(queue_entry),
             "points_awarded": points_awarded,
             "total_points": new_total_points,
             "loyalty_tier": new_tier,
