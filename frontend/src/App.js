@@ -773,6 +773,12 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [analytics, setAnalytics] = useState(null);
+  const [copyNotification, setCopyNotification] = useState('');
+
+  const showCopyNotification = (message) => {
+    setCopyNotification(message);
+    setTimeout(() => setCopyNotification(''), 3000);
+  };
 
   // API request helper
   const apiRequest = async (endpoint, method = 'GET', data = null) => {
