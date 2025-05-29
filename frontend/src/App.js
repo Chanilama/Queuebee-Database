@@ -966,6 +966,176 @@ const SettingsPanel = ({ apiRequest, user }) => {
     </div>
   );
 };
+// Settings Panel Component
+const SettingsPanel = ({ apiRequest, user }) => {
+  const [backupStatus, setBackupStatus] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [backupList, setBackupList] = useState('');
+
+  const handleBackup = async () => {
+    setIsProcessing(true);
+    setBackupStatus('Creating backup...');
+    try {
+      const response = await apiRequest('/admin/backup', 'POST');
+      setBackupStatus(`✅ ${response.message}`);
+      // Refresh backup list
+      listBackups();
+    } catch (error) {
+      setBackupStatus(`❌ Backup failed: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    if (!window.confirm('⚠️ This will restore your database from the latest backup. Continue?')) {
+      return;
+    }
+    
+    setIsProcessing(true);
+    setBackupStatus('Restoring from backup...');
+    try {
+      const response = await apiRequest('/admin/restore', 'POST');
+      setBackupStatus(`✅ ${response.message}`);
+      // Refresh the page after restore
+      setTimeout(() => window.location.reload(), 2000);
+    } catch (error) {
+      setBackupStatus(`❌ Restore failed: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const listBackups = async () => {
+    try {
+      const response = await apiRequest('/admin/backups', 'GET');
+      setBackupList(response.output);
+    } catch (error) {
+      setBackupList(`Error: ${error.message}`);
+    }
+  };
+
+  useEffect(() => {
+    listBackups();
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      {/* Salon Information */}
+      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+        <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+          <Settings className="w-6 h-6 text-blue-600" />
+          <span>Salon Information</span>
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-blue-50 rounded-lg p-4">
+            <p className="text-blue-800 font-medium">Salon Name</p>
+            <p className="text-blue-600">{user?.salon_name}</p>
+          </div>
+          <div className="bg-blue-50 rounded-lg p-4">
+            <p className="text-blue-800 font-medium">Owner</p>
+            <p className="text-blue-600">{user?.owner_name}</p>
+          </div>
+          <div className="bg-blue-50 rounded-lg p-4">
+            <p className="text-blue-800 font-medium">Email</p>
+            <p className="text-blue-600">{user?.email}</p>
+          </div>
+          <div className="bg-blue-50 rounded-lg p-4">
+            <p className="text-blue-800 font-medium">Phone</p>
+            <p className="text-blue-600">{user?.phone}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Loyalty System Settings */}
+      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+        <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+          <Crown className="w-6 h-6 text-purple-600" />
+          <span>Loyalty System</span>
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-purple-50 rounded-lg p-4">
+            <p className="text-purple-800 font-medium">Points per Check-in</p>
+            <p className="text-purple-600">10 points</p>
+          </div>
+          <div className="bg-purple-50 rounded-lg p-4">
+            <p className="text-purple-800 font-medium">Loyalty Tiers</p>
+            <p className="text-purple-600">Bronze, Silver, Gold, Platinum</p>
+          </div>
+          <div className="bg-purple-50 rounded-lg p-4">
+            <p className="text-purple-800 font-medium">Tier Multipliers</p>
+            <p className="text-purple-600">1x, 1.2x, 1.5x, 2x</p>
+          </div>
+          <div className="bg-purple-50 rounded-lg p-4">
+            <p className="text-purple-800 font-medium">Tier Thresholds</p>
+            <p className="text-purple-600">0, 100, 500, 1000 points</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Data Management */}
+      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+        <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+          <Database className="w-6 h-6 text-green-600" />
+          <span>Data Management</span>
+        </h3>
+        
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+          <div className="flex items-start space-x-3">
+            <Shield className="w-6 h-6 text-amber-600 mt-0.5" />
+            <div>
+              <h4 className="text-amber-800 font-medium">🔒 Data Persistence Protection</h4>
+              <p className="text-amber-700 text-sm mt-1">
+                Your salon data is now automatically backed up to prevent loss during system restarts. 
+                Use the backup and restore functions below to manage your data manually.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <button
+            onClick={handleBackup}
+            disabled={isProcessing}
+            className="flex items-center justify-center space-x-3 bg-green-600 text-white px-6 py-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Save className="w-5 h-5" />
+            <span>{isProcessing ? 'Creating Backup...' : 'Create Backup'}</span>
+          </button>
+          
+          <button
+            onClick={handleRestore}
+            disabled={isProcessing}
+            className="flex items-center justify-center space-x-3 bg-blue-600 text-white px-6 py-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Upload className="w-5 h-5" />
+            <span>{isProcessing ? 'Restoring...' : 'Restore Latest Backup'}</span>
+          </button>
+        </div>
+
+        {backupStatus && (
+          <div className={`p-4 rounded-lg mb-4 ${
+            backupStatus.includes('✅') 
+              ? 'bg-green-50 border border-green-200 text-green-800'
+              : backupStatus.includes('❌')
+              ? 'bg-red-50 border border-red-200 text-red-800'
+              : 'bg-blue-50 border border-blue-200 text-blue-800'
+          }`}>
+            {backupStatus}
+          </div>
+        )}
+
+        {backupList && (
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="font-medium text-gray-900 mb-2">Available Backups:</h4>
+            <pre className="text-sm text-gray-700 whitespace-pre-wrap">{backupList}</pre>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
