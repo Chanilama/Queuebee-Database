@@ -132,7 +132,25 @@ const CustomerManagement = ({ apiRequest }) => {
     }
   };
 
-  const parseCSVLine = (line) => {
+  const downloadSampleCSV = () => {
+    const sampleData = [
+      ['Name', 'Phone', 'Email'],
+      ['John Doe', '555-0123', 'john@example.com'],
+      ['Jane Smith', '555-0456', 'jane@example.com'],
+      ['Mike Johnson', '555-0789', 'mike@example.com']
+    ];
+    
+    const csvContent = sampleData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sample_customers.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
     const result = [];
     let current = '';
     let inQuotes = false;
