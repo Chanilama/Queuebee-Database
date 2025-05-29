@@ -134,10 +134,19 @@ const CustomerManagement = ({ apiRequest }) => {
 
   const downloadSampleCSV = () => {
     const sampleData = [
-      ['Name', 'Phone', 'Email'],
+      // Multiple format examples
+      ['Name', 'Mobile', 'Email'],
       ['John Doe', '555-0123', 'john@example.com'],
-      ['Jane Smith', '555-0456', 'jane@example.com'],
-      ['Mike Johnson', '555-0789', 'mike@example.com']
+      ['Jane Smith', '(555) 456-7890', 'jane@example.com'],
+      ['Mike Johnson', '+1-555-789-0123', 'mike@example.com'],
+      // First/Last name format
+      ['First Name', 'Last Name', 'Phone', 'Email Address'],
+      ['Sarah', 'Wilson', '555.111.2222', 'sarah@example.com'],
+      ['David', 'Brown', '5553334444', 'david@example.com'],
+      // Alternative column names
+      ['Customer Name', 'SMS', 'Mail'],
+      ['Emma Davis', '555 777 8888', 'emma@example.com'],
+      ['Alex Rodriguez', '(555) 999-0000', 'alex@example.com']
     ];
     
     const csvContent = sampleData.map(row => row.join(',')).join('\n');
@@ -145,7 +154,7 @@ const CustomerManagement = ({ apiRequest }) => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'sample_customers.csv';
+    a.download = 'queuebee_sample_customers.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
