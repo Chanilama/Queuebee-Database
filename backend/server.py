@@ -63,6 +63,11 @@ class CustomerUpdate(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
+    notes: Optional[str] = None
+
+class UpdateCustomerPoints(BaseModel):
+    points: int
+    reason: Optional[str] = "Manual adjustment"
 
 class CheckInRequest(BaseModel):
     customer_id: str
